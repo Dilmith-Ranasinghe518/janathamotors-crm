@@ -44,11 +44,21 @@
         </div>
     </div>
 
-    <div>
-        <strong>Bill to:</strong>
-        {{ $invoice->customer->name ?? 'Walk-in customer' }}
-        @if($invoice->customer?->phone) &middot; {{ $invoice->customer->phone }} @endif
-        @if($invoice->customer?->vehicle_no) &middot; Vehicle: {{ $invoice->customer->vehicle_no }} @endif
+    <div style="background: #f8f6f0; padding: 10px 12px; border-radius: 6px; margin-bottom: 14px;">
+        <div style="font-weight: bold; margin-bottom: 4px;">Customer & Vehicle Details</div>
+        <div>
+            <strong>Customer:</strong> {{ $invoice->customer_name ?? $invoice->customer->name ?? 'Walk-in Customer' }}
+            @if($invoice->customer_phone || $invoice->customer?->phone)
+                &middot; <strong>Phone:</strong> {{ $invoice->customer_phone ?? $invoice->customer->phone }}
+            @endif
+        </div>
+        @if($invoice->vehicle_no || $invoice->vehicle_model || $invoice->vehicle_year)
+        <div style="margin-top: 3px; color: #444;">
+            @if($invoice->vehicle_no) <strong>Vehicle No:</strong> {{ $invoice->vehicle_no }} &nbsp; @endif
+            @if($invoice->vehicle_model) <strong>Model:</strong> {{ $invoice->vehicle_model }} &nbsp; @endif
+            @if($invoice->vehicle_year) <strong>Year:</strong> {{ $invoice->vehicle_year }} @endif
+        </div>
+        @endif
     </div>
 
     <table>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Setting;
@@ -28,6 +29,11 @@ class InvoiceController extends Controller
     {
         $data = $request->validate([
             'customer_id' => ['nullable', 'exists:customers,id'],
+            'customer_name' => ['nullable', 'string', 'max:255'],
+            'customer_phone' => ['nullable', 'string', 'max:50'],
+            'vehicle_no' => ['nullable', 'string', 'max:100'],
+            'vehicle_model' => ['nullable', 'string', 'max:255'],
+            'vehicle_year' => ['nullable', 'string', 'max:50'],
             'discount' => ['nullable', 'numeric', 'min:0'],
             'tax' => ['nullable', 'numeric', 'min:0'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
@@ -48,6 +54,37 @@ class InvoiceController extends Controller
                 }
             }
 
+            $customerId = $data['customer_id'] ?? null;
+            $customerName = ! empty($data['customer_name']) ? trim($data['customer_name']) : null;
+            $customerPhone = ! empty($data['customer_phone']) ? trim($data['customer_phone']) : null;
+            $vehicleNo = ! empty($data['vehicle_no']) ? trim($data['vehicle_no']) : null;
+
+            // Auto-create or resolve Customer if customer_name is provided without customer_id
+            if (! $customerId && $customerName) {
+                $customer = Customer::query()
+                    ->when($customerPhone, fn ($q) => $q->where('phone', $customerPhone))
+                    ->orWhere('name', $customerName)
+                    ->first();
+
+                if (! $customer) {
+                    $customer = Customer::create([
+                        'name' => $customerName,
+                        'phone' => $customerPhone,
+                        'vehicle_no' => $vehicleNo,
+                        'is_active' => true,
+                    ]);
+                } else {
+                    if ($vehicleNo && empty($customer->vehicle_no)) {
+                        $customer->update(['vehicle_no' => $vehicleNo]);
+                    }
+                    if ($customerPhone && empty($customer->phone)) {
+                        $customer->update(['phone' => $customerPhone]);
+                    }
+                }
+
+                $customerId = $customer->id;
+            }
+
             $subtotal = collect($data['items'])->sum(
                 fn ($item) => ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0)
             );
@@ -59,7 +96,12 @@ class InvoiceController extends Controller
 
             $invoice = Invoice::create([
                 'invoice_no' => $this->nextInvoiceNumber(),
-                'customer_id' => $data['customer_id'] ?? null,
+                'customer_id' => $customerId,
+                'customer_name' => $customerName,
+                'customer_phone' => $customerPhone,
+                'vehicle_no' => $vehicleNo,
+                'vehicle_model' => $data['vehicle_model'] ?? null,
+                'vehicle_year' => $data['vehicle_year'] ?? null,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'tax' => $tax,
@@ -112,7 +154,7 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice)
     {
-        return $invoice->load('items.product', 'customer', 'payments', 'creator:id,name');
+        return $invoice->load(['items.product.brand', 'items.product.vehicleBrand', 'items.product.vehicleModel', 'customer', 'payments', 'creator:id,name']);
     }
 
     public function void(Invoice $invoice)
@@ -146,7 +188,7 @@ class InvoiceController extends Controller
 
     public function pdf(Invoice $invoice)
     {
-        $invoice->load('items.product', 'customer', 'creator:id,name');
+        $invoice->load(['items.product.brand', 'items.product.vehicleBrand', 'items.product.vehicleModel', 'customer', 'creator:id,name']);
 
         $logoPath = resource_path('images/logo.png');
 

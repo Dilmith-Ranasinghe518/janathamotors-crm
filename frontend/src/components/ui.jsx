@@ -24,14 +24,17 @@ export function Button({ variant = 'primary', className, ...props }) {
   return <button className={clsx(base, variants[variant], className)} {...props} />
 }
 
-export function Input({ label, error, className, ...props }) {
+export function Input({ label, error, className, containerClassName, ...props }) {
+  const colSpanClass = className?.split(' ').filter((c) => c.startsWith('col-span') || c.startsWith('md:col-span') || c.startsWith('lg:col-span')).join(' ')
+  const inputClass = className?.split(' ').filter((c) => !c.startsWith('col-span') && !c.startsWith('md:col-span') && !c.startsWith('lg:col-span')).join(' ')
+
   return (
-    <label className="flex flex-col gap-1 text-sm">
+    <label className={clsx('flex flex-col gap-1 text-sm', containerClassName, colSpanClass)}>
       {label && <span className="font-medium text-[var(--ink)]">{label}</span>}
       <input
         className={clsx(
-          'rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)]',
-          className
+          'w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)]',
+          inputClass
         )}
         {...props}
       />
@@ -40,14 +43,17 @@ export function Input({ label, error, className, ...props }) {
   )
 }
 
-export function Select({ label, error, className, children, ...props }) {
+export function Select({ label, error, className, containerClassName, children, ...props }) {
+  const colSpanClass = className?.split(' ').filter((c) => c.startsWith('col-span') || c.startsWith('md:col-span') || c.startsWith('lg:col-span')).join(' ')
+  const inputClass = className?.split(' ').filter((c) => !c.startsWith('col-span') && !c.startsWith('md:col-span') && !c.startsWith('lg:col-span')).join(' ')
+
   return (
-    <label className="flex flex-col gap-1 text-sm">
+    <label className={clsx('flex flex-col gap-1 text-sm', containerClassName, colSpanClass)}>
       {label && <span className="font-medium text-[var(--ink)]">{label}</span>}
       <select
         className={clsx(
-          'rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)]',
-          className
+          'w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)]',
+          inputClass
         )}
         {...props}
       >
@@ -98,18 +104,18 @@ export function EmptyState({ message }) {
 
 export function Modal({ title, onClose, children, wide = false }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 pt-16">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-12 backdrop-blur-xs">
       <div
         className={clsx(
-          'w-full rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-xl',
-          wide ? 'max-w-2xl' : 'max-w-md'
+          'w-full rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl transition-all',
+          wide ? 'max-w-3xl' : 'max-w-md'
         )}
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between border-b border-[var(--line)] pb-3">
           <h2 className="text-lg font-bold text-[var(--ink)]">{title}</h2>
           <button
             onClick={onClose}
-            className="rounded-full px-2 py-1 text-[var(--muted)] hover:bg-[var(--paper)]"
+            className="rounded-full p-1.5 text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)]"
             aria-label="Close"
           >
             ✕

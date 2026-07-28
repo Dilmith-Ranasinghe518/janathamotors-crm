@@ -94,10 +94,40 @@ export function InvoiceDetailPage() {
         </Card>
       </div>
 
+      <Card className="mb-6 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase text-[var(--muted)]">Customer</p>
+            <p className="text-base font-semibold text-[var(--ink)]">
+              {invoice.customer ? (
+                <Link to={`/customers/${invoice.customer.id}`} className="text-[var(--accent-2)] hover:underline">
+                  {invoice.customer_name || invoice.customer.name}
+                </Link>
+              ) : (
+                invoice.customer_name || 'Walk-in Customer'
+              )}
+              {(invoice.customer_phone || invoice.customer?.phone) && (
+                <span className="ml-2 text-xs font-normal text-[var(--muted)]">
+                  📞 {invoice.customer_phone || invoice.customer?.phone}
+                </span>
+              )}
+            </p>
+          </div>
+
+          {(invoice.vehicle_no || invoice.vehicle_model || invoice.vehicle_year) && (
+            <div className="rounded-lg bg-[var(--paper)] px-4 py-2 border border-[var(--line)] text-xs">
+              <span className="font-bold text-[var(--ink)] block mb-0.5">Vehicle Information</span>
+              <div className="flex flex-wrap items-center gap-3 text-[var(--muted)]">
+                {invoice.vehicle_no && <span>Reg No: <strong className="font-mono text-[var(--accent)]">{invoice.vehicle_no}</strong></span>}
+                {invoice.vehicle_model && <span>Model: <strong className="text-[var(--ink)]">{invoice.vehicle_model}</strong></span>}
+                {invoice.vehicle_year && <span>Year: <strong className="text-[var(--ink)]">{invoice.vehicle_year}</strong></span>}
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+
       <Card className="mb-6 overflow-x-auto">
-        <p className="border-b border-[var(--line)] px-4 py-3 text-sm font-semibold">
-          Customer: {invoice.customer ? <Link to={`/customers/${invoice.customer.id}`} className="text-[var(--accent-2)] hover:underline">{invoice.customer.name}</Link> : 'Walk-in'}
-        </p>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)]">
