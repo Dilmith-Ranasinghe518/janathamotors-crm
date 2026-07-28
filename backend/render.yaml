@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: janathamotors-api
+    env: docker
+    plan: free
+    region: singapore
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: APP_NAME
+        value: Janatha Motors
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: LOG_CHANNEL
+        value: stderr
