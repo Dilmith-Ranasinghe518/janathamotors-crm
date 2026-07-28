@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VehicleBrandController;
+use App\Http\Controllers\Api\VehicleModelController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -26,6 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('categories', CategoryController::class)->middleware('permission:manage_products');
     Route::apiResource('brands', BrandController::class)->middleware('permission:manage_products');
+    Route::apiResource('vehicle-brands', VehicleBrandController::class)->middleware('permission:manage_products');
+    Route::apiResource('vehicle-models', VehicleModelController::class)->middleware('permission:manage_products');
     Route::apiResource('products', ProductController::class)->middleware('permission:manage_products');
     Route::post('/products/{product}/adjust-stock', [StockController::class, 'adjust'])->middleware('permission:manage_stock');
     Route::get('/stock-ledger', [StockController::class, 'index'])->middleware('permission:manage_stock');

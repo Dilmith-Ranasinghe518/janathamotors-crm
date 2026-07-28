@@ -106,7 +106,9 @@ export function InvoiceCreatePage() {
                   >
                     <option value="">Select product…</option>
                     {products.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name} — {p.sku} (stock {p.stock_on_hand})</option>
+                      <option key={p.id} value={p.id}>
+                        {p.name} {p.brand ? `[${p.brand.name}]` : ''} {p.vehicle_brand ? `(${p.vehicle_brand.name}${p.vehicle_model ? ' ' + p.vehicle_model.name : ''})` : ''} — {p.sku} (stock {p.stock_on_hand})
+                      </option>
                     ))}
                   </Select>
                   <Input label="Qty" type="number" min="1" className="col-span-2" value={line.quantity} onChange={(e) => updateLine(index, { quantity: e.target.value })} />

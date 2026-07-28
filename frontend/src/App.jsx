@@ -7,6 +7,7 @@ import { AppShell } from './components/AppShell'
 import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ProductsPage } from './pages/ProductsPage'
+import { BrandsPage } from './pages/BrandsPage'
 import { CustomersPage } from './pages/CustomersPage'
 import { CustomerDetailPage } from './pages/CustomerDetailPage'
 import { SuppliersPage } from './pages/SuppliersPage'
@@ -52,6 +53,7 @@ export default function App() {
 
                   <Route element={<ProtectedRoute permission="manage_products" />}>
                     <Route path="/products" element={<ProductsPage />} />
+                    <Route path="/brands" element={<BrandsPage />} />
                   </Route>
 
                   <Route element={<ProtectedRoute permission="manage_customers" />}>

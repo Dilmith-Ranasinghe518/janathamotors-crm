@@ -8,6 +8,7 @@ const NAV = [
   { to: '/', label: 'Dashboard', permission: 'view_dashboard', end: true },
   { to: '/invoices', label: 'Invoices', permission: 'create_invoice' },
   { to: '/products', label: 'Inventory', permission: 'manage_products' },
+  { to: '/brands', label: 'Brands & Vehicles', permission: 'manage_products' },
   { to: '/customers', label: 'Customers', permission: 'manage_customers' },
   { to: '/suppliers', label: 'Suppliers & Purchases', permission: 'manage_suppliers' },
   { to: '/users', label: 'Users', permission: 'manage_users' },
