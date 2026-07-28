@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Janatha Motors — Invoice &amp; Inventory System: Development Plan</title>
+<style>
+  :root{
+    --paper:#f3f0e9;
+    --surface:#ffffff;
+    --ink:#1c1a17;
+    --muted:#6b6459;
+    --line:#ddd6c9;
+    --accent:#a8531f;
+    --accent-soft:#f0ddc9;
+    --accent-2:#35566b;
+    --success:#3f7d4f;
+    --warning:#9c6a1f;
+    --critical:#b23b3b;
+    --shadow: 0 1px 2px rgba(28,26,23,0.06), 0 8px 24px rgba(28,26,23,0.05);
+
+    --font-display: ui-sans-serif, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-body: "Iowan Old Style","Palatino Linotype", Georgia, "Times New Roman", serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#181614;
+      --surface:#221f1c;
+      --ink:#ece7dd;
+      --muted:#a89f90;
+      --line:#3a352d;
+      --accent:#dd9257;
+      --accent-soft:#3a2c1e;
+      --accent-2:#7aa5bc;
+      --success:#74c285;
+      --warning:#dcab55;
+      --critical:#e08585;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#181614;
+    --surface:#221f1c;
+    --ink:#ece7dd;
+    --muted:#a89f90;
+    --line:#3a352d;
+    --accent:#dd9257;
+    --accent-soft:#3a2c1e;
+    --accent-2:#7aa5bc;
+    --success:#74c285;
+    --warning:#dcab55;
+    --critical:#e08585;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px rgba(0,0,0,0.35);
+  }
+  :root[data-theme="light"]{
+    --paper:#f3f0e9;
+    --surface:#ffffff;
+    --ink:#1c1a17;
+    --muted:#6b6459;
+    --line:#ddd6c9;
+    --accent:#a8531f;
+    --accent-soft:#f0ddc9;
+    --accent-2:#35566b;
+    --success:#3f7d4f;
+    --warning:#9c6a1f;
+    --critical:#b23b3b;
+    --shadow: 0 1px 2px rgba(28,26,23,0.06), 0 8px 24px rgba(28,26,23,0.05);
+  }
+
+  *{ box-sizing:border-box; }
+  html{ background:var(--paper); }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:16.5px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; scroll-behavior:auto !important; }
+  }
+
+  h1,h2,h3,.eyebrow,.chip,.toc-label,nav a,.flow-box,.flow-group-label,th,.roadmap-week{
+    font-family:var(--font-display);
+  }
+  h1,h2,h3{ text-wrap:balance; font-weight:750; letter-spacing:-0.01em; color:var(--ink); }
+  p{ text-wrap:pretty; }
+
+  .page{ max-width:1180px; margin:0 auto; padding:0 28px 80px; }
+
+  /* ---------- Cover ---------- */
+  .cover{
+    padding:56px 0 40px;
+    border-bottom:1px solid var(--line);
+  }
+  .cover-top{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:28px;
+  }
+  .eyebrow{
+    font-size:12.5px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--accent); font-weight:700;
+  }
+  .theme-toggle{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line); color:var(--ink);
+    border-radius:999px; padding:7px 14px 7px 10px; cursor:pointer;
+    font-family:var(--font-display); font-size:13px; font-weight:600;
+    box-shadow:var(--shadow);
+  }
+  .theme-toggle:focus-visible{ outline:2px solid var(--accent-2); outline-offset:2px; }
+  .theme-toggle svg{ width:15px; height:15px; }
+
+  .cover h1{
+    font-size:clamp(30px,4.4vw,46px);
+    line-height:1.12;
+    margin:0 0 22px;
+    max-width:16ch;
+  }
+  .cover h1 .sub{
+    display:block; font-size:0.56em; font-weight:600; color:var(--accent); margin-top:8px;
+  }
+  .meta-row{
+    display:flex; flex-wrap:wrap; align-items:center; gap:18px;
+  }
+  .meta{ font-size:14px; color:var(--muted); font-family:var(--font-mono); }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{
+    font-size:12px; font-weight:700; letter-spacing:0.04em;
+    padding:5px 11px; border-radius:999px;
+    background:var(--accent-soft); color:var(--accent); border:1px solid transparent;
+  }
+
+  /* ---------- Layout ---------- */
+  .layout{ display:grid; grid-template-columns:210px 1fr; gap:56px; padding-top:40px; align-items:start; }
+  @media (max-width:820px){ .layout{ grid-template-columns:1fr; } }
+
+  .toc{ position:sticky; top:24px; display:flex; flex-direction:column; gap:2px; }
+  @media (max-width:820px){ .toc{ position:static; flex-direction:row; flex-wrap:wrap; gap:6px 14px; padding-bottom:8px; border-bottom:1px solid var(--line); } }
+  .toc-label{ font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:8px; }
+  @media (max-width:820px){ .toc-label{ width:100%; margin-bottom:2px; } }
+  .toc a{
+    font-size:13.5px; color:var(--muted); text-decoration:none; padding:6px 0;
+    border-left:2px solid transparent; padding-left:10px; margin-left:-11px;
+  }
+  @media (max-width:820px){ .toc a{ border-left:none; margin-left:0; padding:2px 0; } }
+  .toc a:hover{ color:var(--ink); }
+  .toc a:focus-visible{ outline:2px solid var(--accent-2); outline-offset:2px; }
+
+  section{ margin-bottom:56px; scroll-margin-top:24px; }
+  .kicker{
+    font-family:var(--font-mono); font-size:12.5px; color:var(--accent-2); font-weight:600;
+    letter-spacing:0.04em; margin-bottom:6px;
+  }
+  h2{ font-size:24px; margin:0 0 18px; }
+  h3{ font-size:16.5px; margin:26px 0 10px; color:var(--ink); }
+  section > p{ max-width:70ch; color:var(--ink); }
+  section > p.lede{ font-size:18px; max-width:62ch; }
+  .muted{ color:var(--muted); }
+
+  /* ---------- Tables ---------- */
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); }
+  table{ border-collapse:collapse; width:100%; min-width:560px; background:var(--surface); }
+  th,td{ text-align:left; padding:11px 14px; border-bottom:1px solid var(--line); font-size:14px; vertical-align:top; }
+  th{ font-size:11.5px; letter-spacing:0.07em; text-transform:uppercase; color:var(--muted); font-weight:700; background:var(--paper); }
+  tr:last-child td{ border-bottom:none; }
+  td.num, td.center{ text-align:center; font-variant-numeric:tabular-nums; }
+  td code, li code{
+    font-family:var(--font-mono); font-size:0.88em; background:var(--accent-soft); color:var(--accent);
+    padding:1px 6px; border-radius:5px;
+  }
+  .yes{ color:var(--success); font-weight:700; }
+  .no{ color:var(--muted); }
+
+  /* ---------- Flow diagrams ---------- */
+  .flow{
+    display:flex; align-items:stretch; gap:6px; overflow-x:auto; padding:22px 4px 10px;
+  }
+  .flow-group{
+    display:flex; flex-direction:column; gap:8px; flex-shrink:0;
+    border:1px dashed var(--line); border-radius:12px; padding:22px 14px 14px; position:relative; min-width:170px;
+  }
+  .flow-group-label{
+    position:absolute; top:-11px; left:12px; background:var(--paper); padding:0 8px;
+    font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent-2); font-weight:700;
+  }
+  .flow-box{
+    background:var(--surface); border:1px solid var(--line); border-radius:9px;
+    padding:12px 14px; font-size:13.5px; font-weight:650; box-shadow:var(--shadow); line-height:1.4;
+  }
+  .flow-box small{ display:block; font-family:var(--font-mono); font-weight:400; color:var(--muted); font-size:11.5px; margin-top:3px; }
+  .flow-arrow{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    flex-shrink:0; min-width:88px; gap:4px; padding:0 2px;
+  }
+  .flow-arrow span{ font-size:11px; color:var(--muted); font-family:var(--font-mono); text-align:center; line-height:1.3; }
+  .flow-arrow .arrow{ font-size:20px; color:var(--accent); }
+
+  /* ---------- Lists ---------- */
+  .plain-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
+  .plain-list li{ padding-left:22px; position:relative; max-width:72ch; }
+  .plain-list li::before{
+    content:"—"; position:absolute; left:0; color:var(--accent); font-weight:700;
+  }
+  ol.modules{ margin:0; padding-left:0; list-style:none; counter-reset:mod; display:flex; flex-direction:column; gap:16px; }
+  ol.modules li{ counter-increment:mod; position:relative; padding-left:40px; max-width:72ch; }
+  ol.modules li::before{
+    content:counter(mod);
+    position:absolute; left:0; top:1px; width:26px; height:26px; border-radius:7px;
+    background:var(--accent-soft); color:var(--accent); font-family:var(--font-mono); font-weight:700; font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  ol.modules b{ color:var(--ink); }
+
+  .risk-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px; }
+  .risk-list li{
+    padding:12px 16px; border-left:3px solid var(--accent); background:var(--surface);
+    border-radius:0 8px 8px 0; font-size:14.5px; max-width:76ch; box-shadow:var(--shadow);
+  }
+
+  .callout{
+    border:1px solid var(--line); background:var(--surface); border-radius:10px;
+    padding:16px 18px; font-size:14px; color:var(--muted); max-width:72ch; box-shadow:var(--shadow);
+  }
+  .callout b{ color:var(--ink); }
+
+  footer{
+    border-top:1px solid var(--line); margin-top:20px; padding-top:22px;
+    font-size:12.5px; color:var(--muted); font-family:var(--font-mono);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="cover">
+    <div class="cover-top">
+      <span class="eyebrow">Development Plan &amp; Feasibility Review</span>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle light and dark theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+        </svg>
+        <span id="theme-label">Light</span>
+      </button>
+    </div>
+    <h1>Janatha Motors<span class="sub">Invoice &amp; Inventory Management System</span></h1>
+    <div class="meta-row">
+      <span class="meta">Prepared 2026-07-26</span>
+      <div class="chips">
+        <span class="chip">React</span>
+        <span class="chip">Laravel</span>
+        <span class="chip">MySQL</span>
+        <span class="chip">Vercel</span>
+        <span class="chip">Render</span>
+        <span class="chip">Hostinger</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Table of contents">
+      <span class="toc-label">Contents</span>
+      <a href="#feasibility">1. Feasibility Verdict</a>
+      <a href="#architecture">2. Architecture</a>
+      <a href="#stack">3. Tech Stack</a>
+      <a href="#data-model">4. Data Model</a>
+      <a href="#rbac">5. Roles &amp; Permissions</a>
+      <a href="#modules">6. Feature Modules</a>
+      <a href="#deployment">7. Deployment Plan</a>
+      <a href="#roadmap">8. Roadmap</a>
+      <a href="#risks">9. Risks &amp; Recommendations</a>
+    </nav>
+
+    <main class="content">
+
+      <section id="feasibility">
+        <div class="kicker">01 — Verdict</div>
+        <h2>Feasibility Verdict</h2>
+        <p class="lede"><b>Yes — fully buildable</b> with React + Laravel + MySQL, deployed first on Vercel/Render and later migrated to Hostinger. Nothing here is a technical blocker, but five points need to be designed in from day one rather than patched later.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:8%">#</th><th style="width:24%">Issue</th><th style="width:32%">Why it matters</th><th>Recommendation</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="center">1</td>
+                <td><b>Render has no managed MySQL</b> — its managed database offering is PostgreSQL only.</td>
+                <td>Running MySQL yourself in a Render Docker service has no backups/HA — unsafe for real invoice data.</td>
+                <td>Use an external <b>managed MySQL</b> during the Render phase (Aiven or PlanetScale). Don't detour through Postgres "temporarily" — some dialect gaps (ENUM, fulltext syntax, JSON functions) aren't hidden by Eloquent.</td>
+              </tr>
+              <tr>
+                <td class="center">2</td>
+                <td><b>Vercel cannot run PHP/Laravel.</b></td>
+                <td>Vercel is for the React SPA only.</td>
+                <td>Keep the split explicit: <b>Vercel = frontend only</b>, <b>Render (later Hostinger) = Laravel API only</b>.</td>
+              </tr>
+              <tr>
+                <td class="center">3</td>
+                <td><b>Render's filesystem is ephemeral</b> on redeploy/restart.</td>
+                <td>Generated invoice PDFs, product images, and the logo would silently disappear.</td>
+                <td>Store uploads in an <b>S3-compatible bucket</b> (Cloudflare R2's free tier is generous) via Laravel's <code>s3</code> filesystem driver.</td>
+              </tr>
+              <tr>
+                <td class="center">4</td>
+                <td><b>Cross-origin auth</b> — React (<code>*.vercel.app</code>) and Laravel (<code>*.onrender.com</code>) are different origins.</td>
+                <td>Sanctum's cookie/SPA-session mode is fragile across separate domains.</td>
+                <td>Use <b>Sanctum in token (Bearer) mode</b>. Carries over to Hostinger with zero auth code changes.</td>
+              </tr>
+              <tr>
+                <td class="center">5</td>
+                <td><b>Render free tier sleeps</b> after ~15 min idle (10–30s cold start).</td>
+                <td>Fine for staging; not acceptable while cashiers are actively invoicing.</td>
+                <td>Budget for Render's paid Starter tier once real invoices are being created, or move to Hostinger sooner.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="architecture">
+        <div class="kicker">02 — Architecture</div>
+        <h2>System Architecture</h2>
+        <p>Frontend and API are deployed to separate hosts from the start, talking over a stateless JSON API — the same shape it keeps after the Hostinger cutover.</p>
+
+        <div class="flow" role="img" aria-label="React SPA on Vercel calls the Laravel API on Render over HTTPS with a bearer token; the API talks to managed MySQL and a Cloudflare R2 bucket.">
+          <div class="flow-group">
+            <span class="flow-group-label">Vercel</span>
+            <div class="flow-box">React SPA<small>Vite + Tailwind</small></div>
+          </div>
+          <div class="flow-arrow"><span>HTTPS / JSON<br>Bearer token</span><span class="arrow">→</span></div>
+          <div class="flow-group">
+            <span class="flow-group-label">Render</span>
+            <div class="flow-box">Laravel 11 API<small>PHP‑FPM in Docker</small></div>
+          </div>
+          <div class="flow-arrow"><span>Eloquent / PDO</span><span class="arrow">→</span></div>
+          <div class="flow-group">
+            <span class="flow-group-label">Managed data layer</span>
+            <div class="flow-box">MySQL 8<small>Aiven / PlanetScale</small></div>
+            <div class="flow-box">Cloudflare R2<small>PDFs · logos · images</small></div>
+          </div>
+        </div>
+
+        <h3>Later — Hostinger cutover</h3>
+        <div class="flow" role="img" aria-label="After migration, the React build and Laravel API both run on Hostinger, talking to Hostinger MySQL and the same R2 bucket.">
+          <div class="flow-group">
+            <span class="flow-group-label">Unchanged</span>
+            <div class="flow-box">React build<small>Vercel or Hostinger static</small></div>
+          </div>
+          <div class="flow-arrow"><span>HTTPS / JSON</span><span class="arrow">→</span></div>
+          <div class="flow-group">
+            <span class="flow-group-label">Hostinger</span>
+            <div class="flow-box">Laravel API<small>Hostinger PHP</small></div>
+          </div>
+          <div class="flow-arrow"><span class="arrow">→</span></div>
+          <div class="flow-group">
+            <span class="flow-group-label">Data</span>
+            <div class="flow-box">MySQL<small>Hostinger, native</small></div>
+            <div class="flow-box">R2 bucket<small>unchanged, or local disk</small></div>
+          </div>
+        </div>
+        <p class="muted" style="font-size:14px">Only the boxes move — API code, auth mode, and the file-storage driver stay identical, which is the point of designing it this way now.</p>
+      </section>
+
+      <section id="stack">
+        <div class="kicker">03 — Stack</div>
+        <h2>Tech Stack</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+            <tbody>
+              <tr><td>Frontend framework</td><td><code>React 18</code> + <code>Vite</code></td><td>Fast dev loop; Vercel's native zero-config deploy target</td></tr>
+              <tr><td>Styling / theming</td><td>Tailwind CSS, CSS-variable tokens</td><td>First-class <code>dark:</code> support, trivial light/dark token swap</td></tr>
+              <tr><td>UI components</td><td>shadcn/ui (Radix primitives)</td><td>Accessible, unstyled enough to reskin to the JMS brand</td></tr>
+              <tr><td>State</td><td>TanStack Query + Zustand</td><td>Server cache kept separate from small UI state (theme, auth)</td></tr>
+              <tr><td>Charts</td><td>Recharts</td><td>Enough for revenue/stock trend charts, small bundle</td></tr>
+              <tr><td>Backend framework</td><td>Laravel 11 (PHP 8.3)</td><td>Mature ORM, migrations, queues, first-party auth scaffolding</td></tr>
+              <tr><td>Auth</td><td>Sanctum — token mode</td><td>Stateless bearer tokens work across separate Vercel/Render domains</td></tr>
+              <tr><td>Roles &amp; permissions</td><td><code>spatie/laravel-permission</code></td><td>Battle-tested roles+permissions tables; avoids hand-rolled ACL</td></tr>
+              <tr><td>PDF invoices</td><td><code>barryvdh/laravel-dompdf</code></td><td>Server-side invoice PDF generation, download &amp; print</td></tr>
+              <tr><td>Database</td><td>MySQL 8.0</td><td>Per requirement — managed externally pre-Hostinger, native after</td></tr>
+              <tr><td>File storage</td><td>Cloudflare R2 (S3-compatible)</td><td>Survives Render redeploys; same driver after Hostinger move</td></tr>
+              <tr><td>Backend host (now)</td><td>Render (Docker web service)</td><td>Git-push deploy, free TLS, simple env var management</td></tr>
+              <tr><td>Backend host (later)</td><td>Hostinger Business/VPS</td><td>Native PHP + MySQL, SSH or Git deploy</td></tr>
+              <tr><td>Frontend host</td><td>Vercel</td><td>Native Vite/React support, preview deploy per PR</td></tr>
+              <tr><td>CI</td><td>GitHub Actions</td><td>Run PHPUnit + ESLint/Vitest on PR, trigger deploys</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="data-model">
+        <div class="kicker">04 — Schema</div>
+        <h2>Data Model</h2>
+        <p>Stock quantity is never mutated directly on <code>products</code> — every change is a row in <code>stock_ledger</code>, so on-hand quantity is always a derived sum and every movement is auditable.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:20%">Table</th><th>Key fields</th></tr></thead>
+            <tbody>
+              <tr><td><code>users</code></td><td>name, email, password, is_active <span class="muted">(roles/permissions via Spatie's pivot tables)</span></td></tr>
+              <tr><td><code>customers</code></td><td>name, phone, email, address, vehicle_no, opening_balance, current_due</td></tr>
+              <tr><td><code>suppliers</code></td><td>name, phone, address</td></tr>
+              <tr><td><code>categories</code> / <code>brands</code></td><td>lookup tables; categories self-referencing for sub-categories</td></tr>
+              <tr><td><code>products</code></td><td>sku, name, category_id, brand_id, compatible_models, cost_price, selling_price, unit, reorder_level, is_active</td></tr>
+              <tr><td><code>stock_ledger</code></td><td>product_id, type (purchase/sale/adjustment/return), quantity, reference_type, reference_id, created_by</td></tr>
+              <tr><td><code>purchases</code> / <code>purchase_items</code></td><td>supplier restocking records</td></tr>
+              <tr><td><code>invoices</code></td><td>invoice_no, customer_id, subtotal, discount, tax, total, paid_amount, due_amount, status, created_by</td></tr>
+              <tr><td><code>invoice_items</code></td><td>invoice_id, product_id, quantity, unit_price, discount, line_total</td></tr>
+              <tr><td><code>payments</code></td><td>invoice_id, amount, method, paid_at, received_by</td></tr>
+              <tr><td><code>audit_logs</code></td><td>user_id, action, model_type, model_id, changes (json) — who edited a price or adjusted stock, and when</td></tr>
+              <tr><td><code>settings</code></td><td>key/value — company info, tax rate, invoice prefix, default theme</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="rbac">
+        <div class="kicker">05 — Access control</div>
+        <h2>Roles &amp; Permissions</h2>
+        <p>Implemented with <code>spatie/laravel-permission</code> so roles and their permission sets live in a seeder — reproducible identically across local, Render, and Hostinger.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Permission</th><th class="center">Admin</th><th class="center">Manager</th><th class="center">Cashier</th><th class="center">Inventory Clerk</th></tr></thead>
+            <tbody>
+              <tr><td>Manage users</td><td class="center yes">✓</td><td class="center no">–</td><td class="center no">–</td><td class="center no">–</td></tr>
+              <tr><td>Manage roles / permissions</td><td class="center yes">✓</td><td class="center no">–</td><td class="center no">–</td><td class="center no">–</td></tr>
+              <tr><td>Manage system settings</td><td class="center yes">✓</td><td class="center no">–</td><td class="center no">–</td><td class="center no">–</td></tr>
+              <tr><td>View dashboard &amp; reports</td><td class="center yes">✓</td><td class="center yes">✓</td><td class="center">limited</td><td class="center">limited</td></tr>
+              <tr><td>Manage products / categories</td><td class="center yes">✓</td><td class="center yes">✓</td><td class="center no">–</td><td class="center yes">✓</td></tr>
+              <tr><td>Adjust stock manually</td><td class="center yes">✓</td><td class="center yes">✓</td><td class="center no">–</td><td class="center yes">✓</td></tr>
+              <tr><td>Manage suppliers &amp; purchases</td><td class="center yes">✓</td><td class="center yes">✓</td><td class="center no">–</td><td class="center yes">✓</td></tr>
+              <tr><td>Create invoice</td><td class="center yes">✓</td><td class="center yes">✓</td><td class="center yes">✓</td><td class="center no">–</td></tr>
+              <tr><td>Void / refund invoice</td><td class="center yes">✓</td><td class="center yes">✓</td><td class="center no">–</td><td class="center no">–</td></tr>
+              <tr><td>Apply discount above staff limit</td><td class="center yes">✓</td><td class="center yes">✓</td><td class="center no">–</td><td class="center no">–</td></tr>
+              <tr><td>Manage customers</td><td class="center yes">✓</td><td class="center yes">✓</td><td class="center yes">✓</td><td class="center no">–</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="modules">
+        <div class="kicker">06 — Scope</div>
+        <h2>Feature Modules</h2>
+        <ol class="modules">
+          <li><b>Auth &amp; Access</b> — login, forgot password, role-based route/menu guarding, per-user activity log</li>
+          <li><b>Inventory</b> — categories/brands, product CRUD with SKU &amp; compatible-vehicle tagging, stock-in via purchases, automatic stock-out on invoicing, manual adjustments, low-stock alerts</li>
+          <li><b>Customer Management</b> — profiles, purchase history, running due/credit balance, quick-add during invoicing</li>
+          <li><b>Invoicing</b> — line-item builder with live stock check, item- and invoice-level discounts, tax, partial payments &amp; due tracking, PDF generation/printing, void/return flow with automatic stock reversal</li>
+          <li><b>Dashboard</b> — today/week/month sales, top-selling parts, low-stock list, outstanding dues, revenue trend chart</li>
+          <li><b>Reports</b> — sales by date range/customer/product, stock valuation, profit margin, CSV/PDF export</li>
+          <li><b>Settings</b> — company profile &amp; logo, invoice numbering/prefix, tax rate, user &amp; role management</li>
+          <li><b>Theming</b> — Tailwind CSS-variable tokens, toggle stored in <code>localStorage</code> + user profile, respects OS <code>prefers-color-scheme</code> by default</li>
+        </ol>
+      </section>
+
+      <section id="deployment">
+        <div class="kicker">07 — Rollout</div>
+        <h2>Deployment Plan</h2>
+
+        <h3>Phase A — Local development</h3>
+        <p>Laravel via Docker Compose (or Sail) + MySQL 8 container; React via Vite dev server; <code>.env</code> per environment.</p>
+
+        <h3>Phase B — Staging / launch (Vercel + Render)</h3>
+        <ul class="plain-list">
+          <li><b>Frontend</b> — connect the GitHub repo to Vercel, set <code>VITE_API_URL</code> to the Render API URL, enable preview deployments per PR.</li>
+          <li><b>Backend</b> — Dockerfile (<code>php:8.3-fpm</code> + nginx), push to Render, set env vars (<code>DB_*</code>, <code>APP_KEY</code>, <code>FILESYSTEM_DISK=s3</code>, R2 credentials, Sanctum token mode).</li>
+          <li><b>Database</b> — provision managed MySQL (Aiven or PlanetScale), run <code>php artisan migrate --seed</code>.</li>
+          <li><b>Storage</b> — create the R2 bucket, configure CORS for PDF/image access.</li>
+          <li><b>Domain/TLS</b> — Vercel and Render auto-provision TLS; once a domain is bought, point <code>app.janathamotors.lk</code> and <code>api.janathamotors.lk</code> at them.</li>
+        </ul>
+
+        <h3>Phase C — Hostinger cutover (later)</h3>
+        <ul class="plain-list">
+          <li>Confirm the Hostinger plan supports SSH + Composer (Business/Cloud or VPS tier).</li>
+          <li><code>mysqldump</code> from the managed MySQL instance → import into Hostinger's MySQL.</li>
+          <li>Deploy Laravel via Git/SSH; keep <code>FILESYSTEM_DISK=s3</code> pointed at the same R2 bucket, or move to local disk.</li>
+          <li>Repoint DNS for <code>api.janathamotors.lk</code> to Hostinger; keep the frontend on Vercel or move it to Hostinger's static hosting too.</li>
+          <li>Verify, then decommission the Render service.</li>
+        </ul>
+      </section>
+
+      <section id="roadmap">
+        <div class="kicker">08 — Timeline</div>
+        <h2>Roadmap</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th style="width:14%">Week</th><th>Focus</th></tr></thead>
+            <tbody>
+              <tr><td class="roadmap-week">1</td><td>Repo scaffolding, CI, auth + RBAC, base layout &amp; theme toggle</td></tr>
+              <tr><td class="roadmap-week">2</td><td>Inventory module — products, categories, stock ledger</td></tr>
+              <tr><td class="roadmap-week">3</td><td>Customer management + suppliers/purchases</td></tr>
+              <tr><td class="roadmap-week">4</td><td>Invoicing engine — create/edit, stock deduction, PDF generation</td></tr>
+              <tr><td class="roadmap-week">5</td><td>Payments, dues tracking, returns/void flow</td></tr>
+              <tr><td class="roadmap-week">6</td><td>Dashboard + reports</td></tr>
+              <tr><td class="roadmap-week">7</td><td>Polish, permission edge cases, automated tests, deploy to staging</td></tr>
+              <tr><td class="roadmap-week">8</td><td>UAT with shop staff, bug fixes, go-live, Hostinger migration prep</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted" style="font-size:14px">~8 weeks part-time-friendly; compressible to 4–5 weeks full-time for one developer.</p>
+      </section>
+
+      <section id="risks">
+        <div class="kicker">09 — Watch-outs</div>
+        <h2>Risks &amp; Recommendations</h2>
+        <ul class="risk-list">
+          <li>Lock in the MySQL host <b>before</b> writing the first migration — don't detour through Postgres.</li>
+          <li>Use Sanctum token mode from day one; don't start with cookie sessions and switch later.</li>
+          <li>Wire up S3-compatible storage from day one — Render's ephemeral disk will otherwise silently eat uploaded files during development.</li>
+          <li>Seed roles/permissions via a Laravel seeder so they're reproducible across every environment, including Hostinger.</li>
+          <li>Make invoice numbering atomic (DB transaction + row lock) to prevent duplicate numbers when two cashiers invoice at the same time.</li>
+          <li>Add the <code>audit_logs</code> table early — a spare-parts shop needs to know who edited a price or adjusted stock.</li>
+          <li>Buy the real domain before go-live so the Vercel → Render → Hostinger DNS moves are a non-event.</li>
+        </ul>
+      </section>
+
+      <footer>
+        <span>Janatha Motors — Invoice &amp; Inventory Management System</span>
+        <span>DEVELOPMENT_PLAN.html</span>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+  (function(){
+    var root = document.documentElement;
+    var btn = document.getElementById('theme-toggle');
+    var label = document.getElementById('theme-label');
+    var stored = localStorage.getItem('jms-theme');
+    if (stored) root.setAttribute('data-theme', stored);
+
+    function current(){
+      var attr = root.getAttribute('data-theme');
+      if (attr) return attr;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    function render(){
+      label.textContent = current() === 'dark' ? 'Dark' : 'Light';
+    }
+    btn.addEventListener('click', function(){
+      var next = current() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      localStorage.setItem('jms-theme', next);
+      render();
+    });
+    render();
+  })();
+</script>
+</body>
+</html>
