@@ -104,15 +104,15 @@ export function EmptyState({ message }) {
 
 export function Modal({ title, onClose, children, wide = false }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-12 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 pt-6 sm:p-4 sm:pt-12 backdrop-blur-xs">
       <div
         className={clsx(
-          'w-full rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl transition-all',
+          'w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 sm:p-6 shadow-2xl transition-all',
           wide ? 'max-w-3xl' : 'max-w-md'
         )}
       >
         <div className="mb-4 flex items-center justify-between border-b border-[var(--line)] pb-3">
-          <h2 className="text-lg font-bold text-[var(--ink)]">{title}</h2>
+          <h2 className="text-base sm:text-lg font-bold text-[var(--ink)]">{title}</h2>
           <button
             onClick={onClose}
             className="rounded-full p-1.5 text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)]"

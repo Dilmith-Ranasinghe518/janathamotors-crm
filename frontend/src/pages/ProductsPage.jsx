@@ -259,7 +259,7 @@ export function ProductsPage() {
             <Input
               label="Compatible Models / Notes"
               placeholder="e.g. 2018-2023, KSP130, NZE141"
-              className="col-span-2"
+              className="col-span-1 sm:col-span-2"
               value={form.compatible_models}
               onChange={(e) => setForm({ ...form, compatible_models: e.target.value })}
             />
@@ -269,9 +269,9 @@ export function ProductsPage() {
             <Input label="Unit" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} />
             <Input label="Reorder level" type="number" value={form.reorder_level} onChange={(e) => setForm({ ...form, reorder_level: e.target.value })} />
 
-            {error && <p className="col-span-2 text-sm text-[var(--critical)]">{error}</p>}
+            {error && <p className="col-span-1 sm:col-span-2 text-sm text-[var(--critical)]">{error}</p>}
 
-            <div className="col-span-2 flex justify-end gap-2 pt-2">
+            <div className="col-span-1 sm:col-span-2 flex justify-end gap-2 pt-2">
               <Button type="button" variant="secondary" onClick={closeForm}>Cancel</Button>
               <Button type="submit" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? 'Saving…' : 'Save product'}

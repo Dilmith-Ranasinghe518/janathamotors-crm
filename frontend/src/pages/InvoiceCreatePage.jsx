@@ -542,8 +542,8 @@ export function InvoiceCreatePage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                      <div className="md:col-span-5">
+                    <div className="grid grid-cols-3 md:grid-cols-12 gap-3 items-end">
+                      <div className="col-span-3 md:col-span-5">
                         <ProductSearchInput
                           products={products}
                           line={line}
@@ -553,7 +553,7 @@ export function InvoiceCreatePage() {
                         />
                       </div>
 
-                      <div className="md:col-span-2">
+                      <div className="col-span-1 md:col-span-2">
                         <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
                           Qty
                         </label>
@@ -562,11 +562,11 @@ export function InvoiceCreatePage() {
                           min="1"
                           value={line.quantity}
                           onChange={(e) => updateLine(index, { quantity: e.target.value })}
-                          className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2.5 text-center font-bold text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
+                          className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-2.5 py-2.5 text-center font-bold text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
                         />
                       </div>
 
-                      <div className="md:col-span-2">
+                      <div className="col-span-1 md:col-span-2">
                         <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
                           Price (LKR)
                         </label>
@@ -576,11 +576,11 @@ export function InvoiceCreatePage() {
                           placeholder="0.00"
                           value={line.unit_price}
                           onChange={(e) => updateLine(index, { unit_price: e.target.value })}
-                          className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2.5 text-right font-mono text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
+                          className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-2.5 py-2.5 text-right font-mono text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
                         />
                       </div>
 
-                      <div className="md:col-span-2">
+                      <div className="col-span-1 md:col-span-2">
                         <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
                           Discount
                         </label>
@@ -590,11 +590,11 @@ export function InvoiceCreatePage() {
                           placeholder="0.00"
                           value={line.discount}
                           onChange={(e) => updateLine(index, { discount: e.target.value })}
-                          className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3 py-2.5 text-right font-mono text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
+                          className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-2.5 py-2.5 text-right font-mono text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
                         />
                       </div>
 
-                      <div className="md:col-span-1 flex justify-end pb-1">
+                      <div className="col-span-3 md:col-span-1 flex justify-end pb-1">
                         <button
                           type="button"
                           onClick={() => removeLine(index)}

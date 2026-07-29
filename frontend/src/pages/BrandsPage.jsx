@@ -143,7 +143,7 @@ export function BrandsPage() {
       />
 
       {/* Tabs Header */}
-      <div className="mb-6 flex border-b border-[var(--line)]">
+      <div className="mb-6 flex overflow-x-auto whitespace-nowrap border-b border-[var(--line)]">
         <button
           onClick={() => setActiveTab('part-brands')}
           className={`px-5 py-3 text-sm font-semibold border-b-2 transition ${
