@@ -1,9 +1,7 @@
-FROM php:8.3-fpm-alpine
+FROM php:8.4-cli-alpine
 
 # Install system dependencies & PHP extensions
 RUN apk add --no-cache \
-    nginx \
-    supervisor \
     curl \
     git \
     libpng-dev \
@@ -26,8 +24,8 @@ WORKDIR /var/www/html
 # Copy application files
 COPY . .
 
-# Install dependencies & optimize
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install dependencies & optimize (ignoring platform req check for PHP minor mismatches)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=php+
 
 # Set permissions for storage & bootstrap/cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
