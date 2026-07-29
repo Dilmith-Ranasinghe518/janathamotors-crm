@@ -28,8 +28,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('categories', CategoryController::class)->middleware('permission:manage_products');
     Route::apiResource('brands', BrandController::class)->middleware('permission:manage_products');
-    Route::apiResource('vehicle-brands', VehicleBrandController::class)->middleware('permission:manage_products');
-    Route::apiResource('vehicle-models', VehicleModelController::class)->middleware('permission:manage_products');
+    Route::get('/vehicle-brands', [VehicleBrandController::class, 'index']);
+    Route::get('/vehicle-models', [VehicleModelController::class, 'index']);
+    Route::apiResource('vehicle-brands', VehicleBrandController::class)->except(['index'])->middleware('permission:manage_products');
+    Route::apiResource('vehicle-models', VehicleModelController::class)->except(['index'])->middleware('permission:manage_products');
     Route::apiResource('products', ProductController::class)->middleware('permission:manage_products');
     Route::post('/products/{product}/adjust-stock', [StockController::class, 'adjust'])->middleware('permission:manage_stock');
     Route::get('/stock-ledger', [StockController::class, 'index'])->middleware('permission:manage_stock');
@@ -39,7 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('customers', CustomerController::class)->middleware('permission:manage_customers');
 
-    Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show'])->middleware('permission:create_invoice');
+    Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show', 'update'])->middleware('permission:create_invoice');
     Route::post('/invoices/{invoice}/void', [InvoiceController::class, 'void'])->middleware('permission:void_invoice');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->middleware('permission:create_invoice');
     Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])->middleware('permission:create_invoice');

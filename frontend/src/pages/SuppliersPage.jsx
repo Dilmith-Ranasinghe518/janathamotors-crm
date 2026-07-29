@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Plus, Trash2, Truck, Building2 } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -84,8 +85,14 @@ export function SuppliersPage() {
         actions={
           can('manage_suppliers') && (
             <>
-              <Button variant="secondary" onClick={() => setSupplierFormOpen(true)}>+ New supplier</Button>
-              <Button onClick={() => setPurchaseOpen(true)}>+ New purchase (stock in)</Button>
+              <Button variant="secondary" onClick={() => setSupplierFormOpen(true)} className="flex items-center gap-1.5">
+                <Plus className="h-4 w-4" />
+                <span>New supplier</span>
+              </Button>
+              <Button onClick={() => setPurchaseOpen(true)} className="flex items-center gap-1.5">
+                <Truck className="h-4 w-4" />
+                <span>New purchase (stock in)</span>
+              </Button>
             </>
           )
         }
@@ -93,7 +100,10 @@ export function SuppliersPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="overflow-x-auto">
-          <p className="border-b border-[var(--line)] px-4 py-3 text-sm font-semibold">Suppliers</p>
+          <p className="border-b border-[var(--line)] px-4 py-3 text-sm font-semibold flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-[var(--accent)]" />
+            <span>Suppliers</span>
+          </p>
           {suppliers.length === 0 ? (
             <EmptyState message="No suppliers registered yet." />
           ) : (
@@ -119,7 +129,10 @@ export function SuppliersPage() {
         </Card>
 
         <Card className="overflow-x-auto">
-          <p className="border-b border-[var(--line)] px-4 py-3 text-sm font-semibold">Recent Purchases (Stock In)</p>
+          <p className="border-b border-[var(--line)] px-4 py-3 text-sm font-semibold flex items-center gap-2">
+            <Truck className="h-4 w-4 text-[var(--accent)]" />
+            <span>Recent Purchases (Stock In)</span>
+          </p>
           {purchases.length === 0 ? (
             <EmptyState message="No purchases recorded yet." />
           ) : (
@@ -237,7 +250,7 @@ export function SuppliersPage() {
                           className="rounded-lg p-2 text-xs font-bold text-[var(--critical)] hover:bg-[var(--critical-soft)] transition"
                           title="Remove line"
                         >
-                          ✕
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
@@ -252,8 +265,9 @@ export function SuppliersPage() {
               })}
             </div>
 
-            <Button type="button" variant="secondary" onClick={() => setLines((prev) => [...prev, { ...blankLine }])}>
-              + Add Item Line
+            <Button type="button" variant="secondary" onClick={() => setLines((prev) => [...prev, { ...blankLine }])} className="flex items-center justify-center gap-1.5">
+              <Plus className="h-4 w-4" />
+              <span>Add Item Line</span>
             </Button>
 
             <div className="flex items-center justify-between rounded-xl bg-[var(--accent-soft)] p-3 text-sm font-bold text-[var(--accent)] border border-[var(--accent)]/20">

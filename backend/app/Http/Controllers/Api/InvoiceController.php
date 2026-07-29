@@ -152,6 +152,143 @@ class InvoiceController extends Controller
         return response()->json($invoice->load('items.product', 'customer'), 201);
     }
 
+    public function update(Request $request, Invoice $invoice)
+    {
+        if ($invoice->status === 'cancelled') {
+            return response()->json(['message' => 'Cancelled invoices cannot be edited.'], 422);
+        }
+
+        $data = $request->validate([
+            'customer_id' => ['nullable', 'exists:customers,id'],
+            'customer_name' => ['nullable', 'string', 'max:255'],
+            'customer_phone' => ['nullable', 'string', 'max:50'],
+            'vehicle_no' => ['nullable', 'string', 'max:100'],
+            'vehicle_model' => ['nullable', 'string', 'max:255'],
+            'vehicle_year' => ['nullable', 'string', 'max:50'],
+            'discount' => ['nullable', 'numeric', 'min:0'],
+            'tax' => ['nullable', 'numeric', 'min:0'],
+            'paid_amount' => ['nullable', 'numeric', 'min:0'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.discount' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $updatedInvoice = DB::transaction(function () use ($data, $invoice, $request) {
+            // Revert stock for existing items
+            foreach ($invoice->items as $oldItem) {
+                StockLedger::create([
+                    'product_id' => $oldItem->product_id,
+                    'type' => 'return',
+                    'quantity' => $oldItem->quantity,
+                    'reference_type' => Invoice::class,
+                    'reference_id' => $invoice->id,
+                    'created_by' => $request->user()->id,
+                    'note' => 'Stock restored for invoice edit',
+                ]);
+            }
+
+            // Check stock availability for new/updated items
+            foreach ($data['items'] as $item) {
+                $product = Product::findOrFail($item['product_id']);
+                if ($product->fresh()->stock_on_hand < $item['quantity']) {
+                    throw ValidationException::withMessages([
+                        'items' => ["Not enough stock for {$product->name} (available: {$product->stock_on_hand})."],
+                    ]);
+                }
+            }
+
+            // Revert customer due balance if invoice had a customer
+            if ($invoice->customer_id && $invoice->due_amount > 0) {
+                $invoice->customer()->decrement('current_due', $invoice->due_amount);
+            }
+
+            $customerId = $data['customer_id'] ?? null;
+            $customerName = ! empty($data['customer_name']) ? trim($data['customer_name']) : null;
+            $customerPhone = ! empty($data['customer_phone']) ? trim($data['customer_phone']) : null;
+            $vehicleNo = ! empty($data['vehicle_no']) ? trim($data['vehicle_no']) : null;
+
+            if (! $customerId && $customerName) {
+                $customer = Customer::query()
+                    ->when($customerPhone, fn ($q) => $q->where('phone', $customerPhone))
+                    ->orWhere('name', $customerName)
+                    ->first();
+
+                if (! $customer) {
+                    $customer = Customer::create([
+                        'name' => $customerName,
+                        'phone' => $customerPhone,
+                        'vehicle_no' => $vehicleNo,
+                        'is_active' => true,
+                    ]);
+                }
+                $customerId = $customer->id;
+            }
+
+            // Delete old line items
+            $invoice->items()->delete();
+
+            // Calculate totals
+            $subtotal = collect($data['items'])->sum(
+                fn ($item) => ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0)
+            );
+            $discount = $data['discount'] ?? 0;
+            $tax = $data['tax'] ?? 0;
+            $total = $subtotal - $discount + $tax;
+            $paidAmount = min($data['paid_amount'] ?? $invoice->paid_amount, $total);
+            $dueAmount = $total - $paidAmount;
+            $status = $dueAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'due');
+
+            $invoice->update([
+                'customer_id' => $customerId,
+                'customer_name' => $customerName,
+                'customer_phone' => $customerPhone,
+                'vehicle_no' => $vehicleNo,
+                'vehicle_model' => $data['vehicle_model'] ?? null,
+                'vehicle_year' => $data['vehicle_year'] ?? null,
+                'subtotal' => $subtotal,
+                'discount' => $discount,
+                'tax' => $tax,
+                'total' => $total,
+                'paid_amount' => $paidAmount,
+                'due_amount' => $dueAmount,
+                'status' => $status,
+            ]);
+
+            // Create new line items & stock ledger entries
+            foreach ($data['items'] as $item) {
+                $lineTotal = ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0);
+
+                $invoice->items()->create([
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'discount' => $item['discount'] ?? 0,
+                    'line_total' => $lineTotal,
+                ]);
+
+                StockLedger::create([
+                    'product_id' => $item['product_id'],
+                    'type' => 'sale',
+                    'quantity' => -$item['quantity'],
+                    'reference_type' => Invoice::class,
+                    'reference_id' => $invoice->id,
+                    'created_by' => $request->user()->id,
+                    'note' => 'Deducted for invoice edit',
+                ]);
+            }
+
+            if ($invoice->customer_id && $dueAmount > 0) {
+                $invoice->customer()->increment('current_due', $dueAmount);
+            }
+
+            return $invoice;
+        });
+
+        return response()->json($updatedInvoice->load('items.product', 'customer'));
+    }
+
     public function show(Invoice $invoice)
     {
         return $invoice->load(['items.product.brand', 'items.product.vehicleBrand', 'items.product.vehicleModel', 'customer', 'payments', 'creator:id,name']);

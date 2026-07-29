@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Pencil } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select, StatusBadge } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -39,12 +40,9 @@ export function InvoiceDetailPage() {
     setDownloading(true)
     try {
       const response = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' })
-      const url = URL.createObjectURL(response.data)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${invoice.invoice_no}.pdf`
-      link.click()
-      URL.revokeObjectURL(url)
+      const file = new Blob([response.data], { type: 'application/pdf' })
+      const url = URL.createObjectURL(file)
+      window.open(url, '_blank')
     } finally {
       setDownloading(false)
     }
@@ -60,8 +58,17 @@ export function InvoiceDetailPage() {
         description={`Created ${new Date(invoice.created_at).toLocaleString()}`}
         actions={
           <>
+            {invoice.status !== 'cancelled' && can('create_invoice') && (
+              <Link
+                to={`/invoices/${invoice.id}/edit`}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-2 text-sm font-bold text-[var(--ink)] hover:bg-[var(--paper)] transition shadow-xs"
+              >
+                <Pencil className="h-4 w-4 text-[var(--accent)]" />
+                <span>Edit Invoice</span>
+              </Link>
+            )}
             <Button variant="secondary" onClick={downloadPdf} disabled={downloading}>
-              {downloading ? 'Preparing…' : 'Download PDF'}
+              {downloading ? 'Preparing…' : 'PDF'}
             </Button>
             {invoice.due_amount > 0 && invoice.status !== 'cancelled' && can('create_invoice') && (
               <Button onClick={() => setPayOpen(true)}>Record payment</Button>

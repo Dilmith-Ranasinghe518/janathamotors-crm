@@ -48,6 +48,7 @@ export default function App() {
                   <Route element={<ProtectedRoute permission="create_invoice" />}>
                     <Route path="/invoices" element={<InvoicesPage />} />
                     <Route path="/invoices/new" element={<InvoiceCreatePage />} />
+                    <Route path="/invoices/:id/edit" element={<InvoiceCreatePage />} />
                     <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
                   </Route>
 
