@@ -17,6 +17,7 @@ import { InvoiceDetailPage } from './pages/InvoiceDetailPage'
 import { UsersPage } from './pages/UsersPage'
 import { RolesPage } from './pages/RolesPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { StoresPage } from './pages/StoresPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -64,6 +65,10 @@ export default function App() {
 
                   <Route element={<ProtectedRoute permission="manage_suppliers" />}>
                     <Route path="/suppliers" element={<SuppliersPage />} />
+                  </Route>
+
+                  <Route element={<ProtectedRoute permission="manage_stores" />}>
+                    <Route path="/stores" element={<StoresPage />} />
                   </Route>
 
                   <Route element={<ProtectedRoute permission="manage_users" />}>
