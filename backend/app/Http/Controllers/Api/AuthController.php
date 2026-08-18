@@ -53,13 +53,17 @@ class AuthController extends Controller
 
     protected function formatUser(User $user): array
     {
+        $permissions = $user->hasRole('Admin')
+            ? \Spatie\Permission\Models\Permission::pluck('name')
+            : $user->getAllPermissions()->pluck('name');
+
         return [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
             'is_active' => $user->is_active,
             'roles' => $user->getRoleNames(),
-            'permissions' => $user->getAllPermissions()->pluck('name'),
+            'permissions' => $permissions,
         ];
     }
 }
