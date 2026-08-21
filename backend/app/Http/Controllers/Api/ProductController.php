@@ -51,6 +51,13 @@ class ProductController extends Controller
             'reorder_level' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        if (empty($data['store_id'])) {
+            $defaultStore = \App\Models\Store::where('code', 'JMS-01')->first() ?? \App\Models\Store::first();
+            if ($defaultStore) {
+                $data['store_id'] = $defaultStore->id;
+            }
+        }
+
         return response()->json(Product::create($data)->load(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel']), 201);
     }
 
