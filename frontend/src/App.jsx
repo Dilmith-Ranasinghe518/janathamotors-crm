@@ -18,6 +18,7 @@ import { UsersPage } from './pages/UsersPage'
 import { RolesPage } from './pages/RolesPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { StoresPage } from './pages/StoresPage'
+import { StockTransfersPage } from './pages/StockTransfersPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -69,6 +70,10 @@ export default function App() {
 
                   <Route element={<ProtectedRoute permission="manage_stores" />}>
                     <Route path="/stores" element={<StoresPage />} />
+                  </Route>
+
+                  <Route element={<ProtectedRoute permission="manage_stock" />}>
+                    <Route path="/stock-transfers" element={<StockTransfersPage />} />
                   </Route>
 
                   <Route element={<ProtectedRoute permission="manage_users" />}>
