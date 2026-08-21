@@ -151,71 +151,78 @@ export function ProductsPage() {
         actions={can('manage_products') && <Button onClick={openCreate}>+ New product</Button>}
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Input
-          placeholder="Search by name, SKU, brand, or vehicle…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="w-64 sm:w-80">
+          <Input
+            placeholder="Search by name, SKU, brand, or vehicle…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-        <Select
-          value={selectedStoreId}
-          onChange={(e) => setSelectedStoreId(e.target.value)}
-          className="max-w-xs"
-        >
-          <option value="">All Store Locations</option>
-          {stores.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name} ({s.code}) - {s.location}
-            </option>
-          ))}
-        </Select>
+        <div className="w-48 sm:w-60">
+          <Select
+            value={selectedStoreId}
+            onChange={(e) => setSelectedStoreId(e.target.value)}
+          >
+            <option value="">All Store Locations</option>
+            {stores.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.code}) - {s.location}
+              </option>
+            ))}
+          </Select>
+        </div>
 
-        <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
-          <input type="checkbox" checked={lowStockOnly} onChange={(e) => setLowStockOnly(e.target.checked)} />
-          Low stock only
+        <label className="flex items-center gap-2 text-sm text-[var(--muted)] cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={lowStockOnly}
+            onChange={(e) => setLowStockOnly(e.target.checked)}
+            className="rounded border-[var(--line)] text-[var(--accent)] focus:ring-0"
+          />
+          <span>Low stock only</span>
         </label>
       </div>
 
-      <Card className="overflow-x-auto">
+      <Card className="overflow-x-auto shadow-xs">
         {productsQuery.isLoading ? (
-          <p className="p-6 text-sm text-[var(--muted)]">Loading…</p>
+          <p className="p-8 text-center text-sm text-[var(--muted)]">Loading products…</p>
         ) : products.length === 0 ? (
           <EmptyState message="No products found." />
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)]">
-                <th className="px-4 py-3">SKU</th>
-                <th className="px-4 py-3">Name & Brand</th>
-                <th className="px-4 py-3">Store Location</th>
-                <th className="px-4 py-3">Vehicle Compatibility</th>
-                <th className="px-4 py-3 text-right">Stock</th>
-                <th className="px-4 py-3 text-right">Cost</th>
-                <th className="px-4 py-3 text-right">Price</th>
-                <th className="px-4 py-3"></th>
+              <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)] bg-[var(--paper)]/50">
+                <th className="px-4 py-3 whitespace-nowrap">SKU</th>
+                <th className="px-4 py-3 whitespace-nowrap">Name & Brand</th>
+                <th className="px-4 py-3 whitespace-nowrap">Store Location</th>
+                <th className="px-4 py-3 whitespace-nowrap">Vehicle Compatibility</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap">Stock</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap">Cost</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap">Price</th>
+                <th className="px-4 py-3 whitespace-nowrap text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {products.map((p) => (
-                <tr key={p.id} className="border-b border-[var(--line)] last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs">{p.sku}</td>
-                  <td className="px-4 py-3">
-                    <div className="font-semibold text-[var(--ink)]">
+                <tr key={p.id} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)]/40 transition">
+                  <td className="px-4 py-3.5 font-mono text-xs font-semibold whitespace-nowrap text-[var(--ink)]">{p.sku}</td>
+                  <td className="px-4 py-3.5">
+                    <div className="font-bold text-[var(--ink)] leading-snug">
                       {p.name}
                       {p.stock_on_hand <= p.reorder_level && (
-                        <span className="ml-2 rounded-full bg-[var(--critical-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--critical)]">
+                        <span className="ml-2 rounded-full bg-[var(--critical-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--critical)] uppercase tracking-wider">
                           LOW
                         </span>
                       )}
                     </div>
-                    {p.brand && <div className="text-xs text-[var(--muted)]">Brand: {p.brand.name}</div>}
+                    {p.brand && <div className="text-xs text-[var(--muted)] mt-0.5">Brand: {p.brand.name}</div>}
                   </td>
-                  <td className="px-4 py-3 text-xs">
+                  <td className="px-4 py-3.5 text-xs whitespace-nowrap">
                     {p.store ? (
                       <span
-                        className="inline-flex items-center gap-1 rounded-md bg-[var(--accent-soft)] border border-[var(--line)] px-2.5 py-1 font-mono text-xs font-bold text-[var(--accent)]"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent-soft)] border border-[var(--line)] px-2.5 py-1 font-mono text-xs font-bold text-[var(--accent)] whitespace-nowrap shadow-2xs"
                         title={`${p.store.name} (${p.store.location})`}
                       >
                         <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
@@ -225,43 +232,45 @@ export function ProductsPage() {
                       <span className="text-[var(--muted)] text-xs italic">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs">
+                  <td className="px-4 py-3.5 text-xs">
                     {(p.vehicle_brand || p.vehicle_model) ? (
-                      <span className="inline-flex items-center gap-1 rounded bg-[var(--accent-soft)] px-2 py-0.5 font-medium text-[var(--accent)]">
+                      <span className="inline-flex items-center gap-1 rounded bg-[var(--accent-soft)] px-2 py-0.5 font-semibold text-[var(--accent)] whitespace-nowrap">
                         🚗 {p.vehicle_brand?.name ?? ''} {p.vehicle_model ? `/ ${p.vehicle_model.name}` : ''}
                       </span>
                     ) : (
                       <span className="text-[var(--muted)]">—</span>
                     )}
                     {p.compatible_models && (
-                      <div className="mt-0.5 text-[11px] text-[var(--muted)] font-mono">{p.compatible_models}</div>
+                      <div className="mt-0.5 text-[11px] text-[var(--muted)] font-mono line-clamp-1">{p.compatible_models}</div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums font-semibold">{p.stock_on_hand}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{Number(p.cost_price).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{Number(p.selling_price).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {can('manage_stock') && (
-                      <button
-                        onClick={() => openAdjust(p)}
-                        className="mr-3 text-xs font-semibold text-[var(--accent-2)] hover:underline"
-                      >
-                        Adjust stock
-                      </button>
-                    )}
-                    {can('manage_products') && (
-                      <>
-                        <button onClick={() => openEdit(p)} className="mr-3 text-xs font-semibold text-[var(--accent-2)] hover:underline">
-                          Edit
-                        </button>
+                  <td className="px-4 py-3.5 text-right tabular-nums font-bold text-sm">{p.stock_on_hand}</td>
+                  <td className="px-4 py-3.5 text-right tabular-nums text-xs">{Number(p.cost_price).toFixed(2)}</td>
+                  <td className="px-4 py-3.5 text-right tabular-nums font-semibold text-xs text-[var(--ink)]">{Number(p.selling_price).toFixed(2)}</td>
+                  <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-3 text-xs font-semibold">
+                      {can('manage_stock') && (
                         <button
-                          onClick={() => window.confirm(`Delete ${p.name}?`) && deleteMutation.mutate(p.id)}
-                          className="text-xs font-semibold text-[var(--critical)] hover:underline"
+                          onClick={() => openAdjust(p)}
+                          className="text-[var(--accent-2)] hover:underline"
                         >
-                          Delete
+                          Adjust stock
                         </button>
-                      </>
-                    )}
+                      )}
+                      {can('manage_products') && (
+                        <>
+                          <button onClick={() => openEdit(p)} className="text-[var(--accent-2)] hover:underline">
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => window.confirm(`Delete ${p.name}?`) && deleteMutation.mutate(p.id)}
+                            className="text-[var(--critical)] hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
