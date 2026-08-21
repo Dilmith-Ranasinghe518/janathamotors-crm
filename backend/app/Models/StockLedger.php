@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['product_id', 'type', 'quantity', 'reference_type', 'reference_id', 'created_by', 'note'])]
+#[Fillable(['product_id', 'store_id', 'type', 'quantity', 'reference_type', 'reference_id', 'created_by', 'note'])]
 class StockLedger extends Model
 {
     protected $table = 'stock_ledger';
@@ -14,6 +14,11 @@ class StockLedger extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
     }
 
     public function reference(): \Illuminate\Database\Eloquent\Relations\MorphTo

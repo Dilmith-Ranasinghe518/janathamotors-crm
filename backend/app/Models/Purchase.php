@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['reference_no', 'supplier_id', 'purchased_at', 'total', 'status', 'created_by'])]
+#[Fillable(['reference_no', 'supplier_id', 'store_id', 'purchased_at', 'total', 'status', 'created_by'])]
 class Purchase extends Model
 {
     protected function casts(): array
@@ -21,6 +21,11 @@ class Purchase extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
     }
 
     public function items(): HasMany

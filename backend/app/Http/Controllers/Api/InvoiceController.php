@@ -29,6 +29,7 @@ class InvoiceController extends Controller
     {
         $data = $request->validate([
             'customer_id' => ['nullable', 'exists:customers,id'],
+            'store_id' => ['nullable', 'exists:stores,id'],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
             'vehicle_no' => ['nullable', 'string', 'max:100'],
@@ -97,6 +98,7 @@ class InvoiceController extends Controller
             $invoice = Invoice::create([
                 'invoice_no' => $this->nextInvoiceNumber(),
                 'customer_id' => $customerId,
+                'store_id' => $data['store_id'] ?? null,
                 'customer_name' => $customerName,
                 'customer_phone' => $customerPhone,
                 'vehicle_no' => $vehicleNo,
@@ -123,8 +125,11 @@ class InvoiceController extends Controller
                     'line_total' => $lineTotal,
                 ]);
 
+                $product = Product::find($item['product_id']);
+
                 StockLedger::create([
                     'product_id' => $item['product_id'],
+                    'store_id' => $data['store_id'] ?? $product?->store_id,
                     'type' => 'sale',
                     'quantity' => -$item['quantity'],
                     'reference_type' => Invoice::class,

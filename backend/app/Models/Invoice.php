@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'invoice_no', 'customer_id', 'customer_name', 'customer_phone',
+    'invoice_no', 'customer_id', 'store_id', 'customer_name', 'customer_phone',
     'vehicle_no', 'vehicle_model', 'vehicle_year',
     'subtotal', 'discount', 'tax', 'total',
     'paid_amount', 'due_amount', 'status', 'created_by',
@@ -30,6 +30,11 @@ class Invoice extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
     }
 
     public function items(): HasMany

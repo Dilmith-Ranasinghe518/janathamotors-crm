@@ -11,8 +11,9 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $products = Product::query()
-            ->with(['category', 'brand', 'vehicleBrand', 'vehicleModel'])
+            ->with(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel'])
             ->withSum('stockLedger as stock_on_hand', 'quantity')
+            ->when($request->filled('store_id'), fn ($q) => $q->where('store_id', $request->input('store_id')))
             ->when($request->string('search')->isNotEmpty(), function ($q) use ($request) {
                 $term = '%'.$request->string('search').'%';
                 $q->where(fn ($q) => $q->where('name', 'like', $term)
@@ -21,6 +22,7 @@ class ProductController extends Controller
                     ->orWhereHas('brand', fn ($bq) => $bq->where('name', 'like', $term))
                     ->orWhereHas('vehicleBrand', fn ($vbq) => $vbq->where('name', 'like', $term))
                     ->orWhereHas('vehicleModel', fn ($vmq) => $vmq->where('name', 'like', $term))
+                    ->orWhereHas('store', fn ($sq) => $sq->where('name', 'like', $term)->orWhere('code', 'like', $term)->orWhere('location', 'like', $term))
                 );
             })
             ->when($request->boolean('low_stock'), fn ($q) => $q->whereRaw(
@@ -39,6 +41,7 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'brand_id' => ['nullable', 'exists:brands,id'],
+            'store_id' => ['nullable', 'exists:stores,id'],
             'vehicle_brand_id' => ['nullable', 'exists:vehicle_brands,id'],
             'vehicle_model_id' => ['nullable', 'exists:vehicle_models,id'],
             'compatible_models' => ['nullable', 'string'],
@@ -48,12 +51,12 @@ class ProductController extends Controller
             'reorder_level' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        return response()->json(Product::create($data)->load(['category', 'brand', 'vehicleBrand', 'vehicleModel']), 201);
+        return response()->json(Product::create($data)->load(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel']), 201);
     }
 
     public function show(Product $product)
     {
-        return $product->load(['category', 'brand', 'vehicleBrand', 'vehicleModel'])->append('stock_on_hand');
+        return $product->load(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel'])->append('stock_on_hand');
     }
 
     public function update(Request $request, Product $product)
@@ -63,6 +66,7 @@ class ProductController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'brand_id' => ['nullable', 'exists:brands,id'],
+            'store_id' => ['nullable', 'exists:stores,id'],
             'vehicle_brand_id' => ['nullable', 'exists:vehicle_brands,id'],
             'vehicle_model_id' => ['nullable', 'exists:vehicle_models,id'],
             'compatible_models' => ['nullable', 'string'],
@@ -75,7 +79,7 @@ class ProductController extends Controller
 
         $product->update($data);
 
-        return $product->load(['category', 'brand', 'vehicleBrand', 'vehicleModel']);
+        return $product->load(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel']);
     }
 
     public function destroy(Product $product)

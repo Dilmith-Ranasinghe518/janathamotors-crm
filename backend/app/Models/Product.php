@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'sku', 'name', 'category_id', 'brand_id', 'vehicle_brand_id', 'vehicle_model_id', 'compatible_models',
+    'sku', 'name', 'category_id', 'brand_id', 'store_id', 'vehicle_brand_id', 'vehicle_model_id', 'compatible_models',
     'cost_price', 'selling_price', 'unit', 'reorder_level', 'is_active',
 ])]
 class Product extends Model
@@ -20,6 +20,11 @@ class Product extends Model
             'selling_price' => 'decimal:2',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
     }
 
     public function category(): BelongsTo

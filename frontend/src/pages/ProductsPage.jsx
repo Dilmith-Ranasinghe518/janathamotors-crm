@@ -1,31 +1,55 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { MapPin, Store } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 
 const emptyForm = {
-  sku: '', name: '', category_id: '', brand_id: '', vehicle_brand_id: '', vehicle_model_id: '', compatible_models: '',
-  cost_price: '', selling_price: '', unit: 'pc', reorder_level: 5,
+  sku: '',
+  name: '',
+  category_id: '',
+  brand_id: '',
+  store_id: '',
+  vehicle_brand_id: '',
+  vehicle_model_id: '',
+  compatible_models: '',
+  cost_price: '',
+  selling_price: '',
+  unit: 'pc',
+  reorder_level: 5,
 }
 
 export function ProductsPage() {
   const { can } = useAuth()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
+  const [selectedStoreId, setSelectedStoreId] = useState('')
   const [lowStockOnly, setLowStockOnly] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [adjusting, setAdjusting] = useState(null)
   const [adjustQty, setAdjustQty] = useState('')
+  const [adjustStoreId, setAdjustStoreId] = useState('')
   const [error, setError] = useState('')
 
+  const storesQuery = useQuery({
+    queryKey: ['stores', 'all'],
+    queryFn: () => api.get('/stores', { params: { all: true } }).then((r) => r.data),
+  })
+
   const productsQuery = useQuery({
-    queryKey: ['products', search, lowStockOnly],
+    queryKey: ['products', search, selectedStoreId, lowStockOnly],
     queryFn: () =>
       api
-        .get('/products', { params: { search: search || undefined, low_stock: lowStockOnly || undefined } })
+        .get('/products', {
+          params: {
+            search: search || undefined,
+            store_id: selectedStoreId || undefined,
+            low_stock: lowStockOnly || undefined,
+          },
+        })
         .then((r) => r.data),
   })
 
@@ -33,6 +57,8 @@ export function ProductsPage() {
   const brandsQuery = useQuery({ queryKey: ['brands'], queryFn: () => api.get('/brands').then((r) => r.data) })
   const vehicleBrandsQuery = useQuery({ queryKey: ['vehicle-brands'], queryFn: () => api.get('/vehicle-brands').then((r) => r.data) })
   const vehicleModelsQuery = useQuery({ queryKey: ['vehicle-models'], queryFn: () => api.get('/vehicle-models').then((r) => r.data) })
+
+  const stores = storesQuery.data?.data ?? []
 
   const saveMutation = useMutation({
     mutationFn: (payload) =>
@@ -50,11 +76,12 @@ export function ProductsPage() {
   })
 
   const adjustMutation = useMutation({
-    mutationFn: ({ id, quantity }) => api.post(`/products/${id}/adjust-stock`, { quantity }),
+    mutationFn: ({ id, quantity, store_id }) => api.post(`/products/${id}/adjust-stock`, { quantity, store_id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
       setAdjusting(null)
       setAdjustQty('')
+      setAdjustStoreId('')
     },
     onError: (err) => setError(apiErrorMessage(err, 'Could not adjust stock.')),
   })
@@ -73,6 +100,7 @@ export function ProductsPage() {
       name: product.name,
       category_id: product.category_id ?? '',
       brand_id: product.brand_id ?? '',
+      store_id: product.store_id ?? '',
       vehicle_brand_id: product.vehicle_brand_id ?? '',
       vehicle_model_id: product.vehicle_model_id ?? '',
       compatible_models: product.compatible_models ?? '',
@@ -83,6 +111,13 @@ export function ProductsPage() {
     })
     setError('')
     setFormOpen(true)
+  }
+
+  function openAdjust(product) {
+    setAdjusting(product)
+    setAdjustQty('')
+    setAdjustStoreId(product.store_id ? String(product.store_id) : '')
+    setError('')
   }
 
   function closeForm() {
@@ -97,6 +132,7 @@ export function ProductsPage() {
       ...form,
       category_id: form.category_id || null,
       brand_id: form.brand_id || null,
+      store_id: form.store_id || null,
       vehicle_brand_id: form.vehicle_brand_id || null,
       vehicle_model_id: form.vehicle_model_id || null,
     })
@@ -111,7 +147,7 @@ export function ProductsPage() {
     <div>
       <PageHeader
         title="Inventory"
-        description="Spare parts catalog with live stock levels."
+        description="Spare parts catalog linked with store locations and live stock levels."
         actions={can('manage_products') && <Button onClick={openCreate}>+ New product</Button>}
       />
 
@@ -120,8 +156,22 @@ export function ProductsPage() {
           placeholder="Search by name, SKU, brand, or vehicle…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
+          className="max-w-xs"
         />
+
+        <Select
+          value={selectedStoreId}
+          onChange={(e) => setSelectedStoreId(e.target.value)}
+          className="max-w-xs"
+        >
+          <option value="">All Store Locations</option>
+          {stores.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} ({s.code}) - {s.location}
+            </option>
+          ))}
+        </Select>
+
         <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
           <input type="checkbox" checked={lowStockOnly} onChange={(e) => setLowStockOnly(e.target.checked)} />
           Low stock only
@@ -139,6 +189,7 @@ export function ProductsPage() {
               <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)]">
                 <th className="px-4 py-3">SKU</th>
                 <th className="px-4 py-3">Name & Brand</th>
+                <th className="px-4 py-3">Store Location</th>
                 <th className="px-4 py-3">Vehicle Compatibility</th>
                 <th className="px-4 py-3 text-right">Stock</th>
                 <th className="px-4 py-3 text-right">Cost</th>
@@ -162,6 +213,19 @@ export function ProductsPage() {
                     {p.brand && <div className="text-xs text-[var(--muted)]">Brand: {p.brand.name}</div>}
                   </td>
                   <td className="px-4 py-3 text-xs">
+                    {p.store ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface)] border border-[var(--line)] px-2.5 py-1 text-xs font-semibold text-[var(--ink)]">
+                        <MapPin className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" />
+                        <span>{p.store.name}</span>
+                        <span className="font-mono text-[10px] text-[var(--muted)] bg-[var(--paper)] px-1 rounded border border-[var(--line)]">
+                          {p.store.code}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-[var(--muted)] text-xs italic">Unassigned</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
                     {(p.vehicle_brand || p.vehicle_model) ? (
                       <span className="inline-flex items-center gap-1 rounded bg-[var(--accent-soft)] px-2 py-0.5 font-medium text-[var(--accent)]">
                         🚗 {p.vehicle_brand?.name ?? ''} {p.vehicle_model ? `/ ${p.vehicle_model.name}` : ''}
@@ -179,7 +243,7 @@ export function ProductsPage() {
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     {can('manage_stock') && (
                       <button
-                        onClick={() => setAdjusting(p)}
+                        onClick={() => openAdjust(p)}
                         className="mr-3 text-xs font-semibold text-[var(--accent-2)] hover:underline"
                       >
                         Adjust stock
@@ -227,6 +291,20 @@ export function ProductsPage() {
             </Select>
 
             <Select
+              label="Store Location"
+              value={form.store_id}
+              onChange={(e) => setForm({ ...form, store_id: e.target.value })}
+              className="col-span-1 sm:col-span-2"
+            >
+              <option value="">— Primary Store Location (Optional) —</option>
+              {stores.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.code}) - {s.location}
+                </option>
+              ))}
+            </Select>
+
+            <Select
               label="Vehicle Brand / Make"
               value={form.vehicle_brand_id}
               onChange={(e) => {
@@ -234,7 +312,7 @@ export function ProductsPage() {
                 setForm({
                   ...form,
                   vehicle_brand_id: newBrandId,
-                  vehicle_model_id: '', // reset selected model when brand changes
+                  vehicle_model_id: '',
                 })
               }}
             >
@@ -287,11 +365,29 @@ export function ProductsPage() {
             onSubmit={(e) => {
               e.preventDefault()
               setError('')
-              adjustMutation.mutate({ id: adjusting.id, quantity: Number(adjustQty) })
+              adjustMutation.mutate({
+                id: adjusting.id,
+                quantity: Number(adjustQty),
+                store_id: adjustStoreId ? Number(adjustStoreId) : null,
+              })
             }}
             className="flex flex-col gap-4"
           >
             <p className="text-sm text-[var(--muted)]">Current stock on hand: {adjusting.stock_on_hand}</p>
+            
+            <Select
+              label="Store Location for Adjustment"
+              value={adjustStoreId}
+              onChange={(e) => setAdjustStoreId(e.target.value)}
+            >
+              <option value="">— Use Product's Store Location —</option>
+              {stores.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.code}) - {s.location}
+                </option>
+              ))}
+            </Select>
+
             <Input
               label="Quantity change (use a negative number to remove stock)"
               type="number"
@@ -299,7 +395,9 @@ export function ProductsPage() {
               value={adjustQty}
               onChange={(e) => setAdjustQty(e.target.value)}
             />
+            
             {error && <p className="text-sm text-[var(--critical)]">{error}</p>}
+            
             <div className="flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => setAdjusting(null)}>Cancel</Button>
               <Button type="submit" disabled={adjustMutation.isPending}>Apply</Button>

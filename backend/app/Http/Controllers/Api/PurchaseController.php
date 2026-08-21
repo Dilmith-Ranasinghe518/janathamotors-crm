@@ -14,8 +14,9 @@ class PurchaseController extends Controller
     public function index(Request $request)
     {
         return Purchase::query()
-            ->with('supplier:id,name')
+            ->with(['supplier:id,name', 'store:id,name,code,location'])
             ->when($request->integer('supplier_id'), fn ($q, $id) => $q->where('supplier_id', $id))
+            ->when($request->integer('store_id'), fn ($q, $id) => $q->where('store_id', $id))
             ->latest('purchased_at')
             ->paginate(20);
     }
@@ -24,6 +25,7 @@ class PurchaseController extends Controller
     {
         $data = $request->validate([
             'supplier_id' => ['required', 'exists:suppliers,id'],
+            'store_id' => ['nullable', 'exists:stores,id'],
             'purchased_at' => ['required', 'date'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
@@ -37,6 +39,7 @@ class PurchaseController extends Controller
             $purchase = Purchase::create([
                 'reference_no' => 'PO-'.now()->format('Ymd').'-'.Str::upper(Str::random(6)),
                 'supplier_id' => $data['supplier_id'],
+                'store_id' => $data['store_id'] ?? null,
                 'purchased_at' => $data['purchased_at'],
                 'total' => $total,
                 'status' => 'received',
@@ -53,8 +56,11 @@ class PurchaseController extends Controller
                     'line_total' => $lineTotal,
                 ]);
 
+                $product = \App\Models\Product::find($item['product_id']);
+
                 StockLedger::create([
                     'product_id' => $item['product_id'],
+                    'store_id' => $data['store_id'] ?? $product?->store_id,
                     'type' => 'purchase',
                     'quantity' => $item['quantity'],
                     'reference_type' => Purchase::class,
@@ -66,7 +72,7 @@ class PurchaseController extends Controller
             return $purchase;
         });
 
-        return response()->json($purchase->load('items.product', 'supplier'), 201);
+        return response()->json($purchase->load('items.product', 'supplier', 'store'), 201);
     }
 
     public function show(Purchase $purchase)
