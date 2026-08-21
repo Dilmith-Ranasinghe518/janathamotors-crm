@@ -214,15 +214,15 @@ export function ProductsPage() {
                   </td>
                   <td className="px-4 py-3 text-xs">
                     {p.store ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface)] border border-[var(--line)] px-2.5 py-1 text-xs font-semibold text-[var(--ink)]">
-                        <MapPin className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" />
-                        <span>{p.store.name}</span>
-                        <span className="font-mono text-[10px] text-[var(--muted)] bg-[var(--paper)] px-1 rounded border border-[var(--line)]">
-                          {p.store.code}
-                        </span>
+                      <span
+                        className="inline-flex items-center gap-1 rounded-md bg-[var(--accent-soft)] border border-[var(--line)] px-2.5 py-1 font-mono text-xs font-bold text-[var(--accent)]"
+                        title={`${p.store.name} (${p.store.location})`}
+                      >
+                        <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
+                        <span>{p.store.code}</span>
                       </span>
                     ) : (
-                      <span className="text-[var(--muted)] text-xs italic">Unassigned</span>
+                      <span className="text-[var(--muted)] text-xs italic">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs">
