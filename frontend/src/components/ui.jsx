@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import clsx from 'clsx'
+import { Eye, EyeOff } from 'lucide-react'
 
 export function Card({ className, children }) {
   return (
@@ -24,20 +26,39 @@ export function Button({ variant = 'primary', className, ...props }) {
   return <button className={clsx(base, variants[variant], className)} {...props} />
 }
 
-export function Input({ label, error, className, containerClassName, ...props }) {
+export function Input({ label, error, className, containerClassName, type, ...props }) {
+  const [showPassword, setShowPassword] = useState(false)
+  const isPassword = type === 'password'
+  const currentType = isPassword ? (showPassword ? 'text' : 'password') : type
+
   const colSpanClass = className?.split(' ').filter((c) => c.startsWith('col-span') || c.startsWith('md:col-span') || c.startsWith('lg:col-span')).join(' ')
   const inputClass = className?.split(' ').filter((c) => !c.startsWith('col-span') && !c.startsWith('md:col-span') && !c.startsWith('lg:col-span')).join(' ')
 
   return (
     <label className={clsx('flex flex-col gap-1 text-sm', containerClassName, colSpanClass)}>
       {label && <span className="font-medium text-[var(--ink)]">{label}</span>}
-      <input
-        className={clsx(
-          'w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)]',
-          inputClass
+      <div className="relative w-full">
+        <input
+          type={currentType}
+          className={clsx(
+            'w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-[var(--ink)] outline-none focus:border-[var(--accent)]',
+            isPassword && 'pr-9',
+            inputClass
+          )}
+          {...props}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--muted)] hover:text-[var(--ink)] transition focus:outline-none"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
         )}
-        {...props}
-      />
+      </div>
       {error && <span className="text-xs text-[var(--critical)]">{error}</span>}
     </label>
   )

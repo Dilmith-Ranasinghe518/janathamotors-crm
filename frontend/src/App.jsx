@@ -84,9 +84,7 @@ export default function App() {
                     <Route path="/roles" element={<RolesPage />} />
                   </Route>
 
-                  <Route element={<ProtectedRoute permission="manage_settings" />}>
-                    <Route path="/settings" element={<SettingsPage />} />
-                  </Route>
+                  <Route path="/settings" element={<SettingsPage />} />
                 </Route>
               </Route>
 

@@ -34,7 +34,7 @@ const NAV = [
   { to: '/stock-transfers', label: 'Stock Transfers', permission: 'manage_stock', icon: ArrowLeftRight },
   { to: '/users', label: 'Users', permission: 'manage_users', icon: UserCheck },
   { to: '/roles', label: 'Roles & Permissions', permission: 'manage_roles', icon: Shield },
-  { to: '/settings', label: 'Settings', permission: 'manage_settings', icon: Settings },
+  { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 function ThemeToggle() {
@@ -76,7 +76,7 @@ export function AppShell() {
         </div>
 
         <nav className="flex flex-col gap-1">
-          {NAV.filter((item) => can(item.permission)).map((item) => {
+          {NAV.filter((item) => !item.permission || can(item.permission)).map((item) => {
             const Icon = item.icon
             return (
               <NavLink
@@ -134,7 +134,7 @@ export function AppShell() {
         </div>
 
         <nav className="flex flex-col gap-1 overflow-y-auto flex-1 pr-1">
-          {NAV.filter((item) => can(item.permission)).map((item) => {
+          {NAV.filter((item) => !item.permission || can(item.permission)).map((item) => {
             const Icon = item.icon
             return (
               <NavLink

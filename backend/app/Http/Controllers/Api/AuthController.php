@@ -51,6 +51,27 @@ class AuthController extends Controller
         return response()->json($this->formatUser($request->user()));
     }
 
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The provided current password does not match your account password.'],
+            ]);
+        }
+
+        $user->password = $request->password;
+        $user->save();
+
+        return response()->json(['message' => 'Password updated successfully.']);
+    }
+
     protected function formatUser(User $user): array
     {
         $permissions = $user->hasRole('Admin')
