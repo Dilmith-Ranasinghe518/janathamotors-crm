@@ -56,6 +56,8 @@ function ThemeToggle() {
 export function AppShell() {
   const { user, can, logout } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem('jms_sidebar_collapsed') === 'true'
@@ -64,6 +66,16 @@ export function AppShell() {
     }
   })
   const location = useLocation()
+
+  const handleConfirmLogout = async () => {
+    try {
+      setLoggingOut(true)
+      await logout()
+    } finally {
+      setLoggingOut(false)
+      setShowLogoutConfirm(false)
+    }
+  }
 
   const toggleCollapse = () => {
     setCollapsed((prev) => {
@@ -165,7 +177,7 @@ export function AppShell() {
                 <p className="text-[11px] text-[var(--muted)] truncate">{user?.roles?.[0]}</p>
               </div>
               <button
-                onClick={logout}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--critical)] transition"
                 title="Log out"
                 aria-label="Log out"
@@ -176,7 +188,7 @@ export function AppShell() {
           ) : (
             <div className="flex justify-center">
               <button
-                onClick={logout}
+                onClick={() => setShowLogoutConfirm(true)}
                 className="group relative flex h-9 w-9 items-center justify-center rounded-xl text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--critical)] transition"
                 aria-label="Log out"
               >
@@ -253,7 +265,7 @@ export function AppShell() {
             <p className="text-[11px] text-[var(--muted)]">{user?.roles?.[0]}</p>
           </div>
           <button
-            onClick={logout}
+            onClick={() => setShowLogoutConfirm(true)}
             className="flex items-center gap-1 rounded-lg border border-[var(--line)] px-2.5 py-1.5 text-xs font-bold text-[var(--critical)] hover:bg-[var(--critical-soft)] transition"
           >
             <LogOut className="h-3.5 w-3.5" />
@@ -291,6 +303,60 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      {showLogoutConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => !loggingOut && setShowLogoutConfirm(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl transition-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3.5 mb-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--critical-soft)] text-[var(--critical)]">
+                <LogOut className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-[var(--ink)]">Log Out</h3>
+                <p className="text-xs text-[var(--muted)]">Sign out of Janatha Motors</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-[var(--muted)] leading-relaxed mb-4">
+              Are you sure you want to log out? Any unsaved changes in current forms will be lost.
+            </p>
+
+            {user && (
+              <div className="mb-5 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3 text-xs">
+                <p className="font-semibold text-[var(--ink)]">{user.name}</p>
+                <p className="text-[var(--muted)] truncate">{user.email || user.roles?.[0]}</p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={loggingOut}
+                onClick={() => setShowLogoutConfirm(false)}
+                className="rounded-lg border border-[var(--line)] px-4 py-2 text-sm font-semibold text-[var(--ink)] hover:bg-[var(--paper)] transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={loggingOut}
+                onClick={handleConfirmLogout}
+                className="flex items-center gap-1.5 rounded-lg bg-[var(--critical)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition disabled:opacity-50 shadow-xs"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>{loggingOut ? 'Logging out…' : 'Log out'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
