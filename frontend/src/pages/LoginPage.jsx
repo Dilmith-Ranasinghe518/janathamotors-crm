@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { apiErrorMessage } from '../lib/api'
 import { Button, Input } from '../components/ui'
+import logo from '../assets/logo.webp'
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -29,8 +30,15 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--paper)] px-4">
       <div className="w-full max-w-sm rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-8 shadow-lg">
-        <p className="text-xl font-extrabold tracking-tight text-[var(--ink)]">Janatha Motors</p>
-        <p className="mb-6 text-sm text-[var(--muted)]">Sign in to manage invoices &amp; inventory</p>
+        <div className="mb-6 flex items-center gap-3.5">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 border border-[var(--line)] shadow-xs">
+            <img src={logo} alt="Janatha Motors Logo" className="h-full w-full object-contain rounded-full" />
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold tracking-tight text-[var(--ink)] leading-snug">Janatha Motors</h1>
+            <p className="text-xs text-[var(--muted)]">Sign in to manage invoices &amp; inventory</p>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input

@@ -315,8 +315,8 @@ export function AppShell() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3.5 mb-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--critical-soft)] text-[var(--critical)]">
-                <LogOut className="h-5 w-5" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 border border-[var(--line)] shadow-xs">
+                <img src={logo} alt="Janatha Motors" className="h-full w-full object-contain rounded-full" />
               </div>
               <div>
                 <h3 className="text-base font-bold text-[var(--ink)]">Log Out</h3>
