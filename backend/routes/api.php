@@ -35,6 +35,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/vehicle-models', [VehicleModelController::class, 'index']);
     Route::apiResource('vehicle-brands', VehicleBrandController::class)->except(['index'])->middleware('permission:manage_products');
     Route::apiResource('vehicle-models', VehicleModelController::class)->except(['index'])->middleware('permission:manage_products');
+    Route::get('/products/export', [ProductController::class, 'export'])->middleware('permission:manage_products');
+    Route::get('/products/template', [ProductController::class, 'template'])->middleware('permission:manage_products');
+    Route::post('/products/import', [ProductController::class, 'import'])->middleware('permission:manage_products');
     Route::apiResource('products', ProductController::class)->middleware('permission:manage_products');
     Route::post('/products/{product}/adjust-stock', [StockController::class, 'adjust'])->middleware('permission:manage_stock');
     Route::get('/stock-ledger', [StockController::class, 'index'])->middleware('permission:manage_stock');

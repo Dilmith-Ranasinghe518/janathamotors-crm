@@ -1,6 +1,16 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { MapPin, Store } from 'lucide-react'
+import {
+  MapPin,
+  Store,
+  Download,
+  Upload,
+  Plus,
+  FileSpreadsheet,
+  CheckCircle2,
+  AlertCircle,
+  FileText,
+} from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -33,6 +43,16 @@ export function ProductsPage() {
   const [adjustQty, setAdjustQty] = useState('')
   const [adjustStoreId, setAdjustStoreId] = useState('')
   const [error, setError] = useState('')
+
+  // Import & Export states
+  const [isExporting, setIsExporting] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
+  const [importFile, setImportFile] = useState(null)
+  const [updateExisting, setUpdateExisting] = useState(true)
+  const [isImporting, setIsImporting] = useState(false)
+  const [importError, setImportError] = useState('')
+  const [importResult, setImportResult] = useState(null)
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false)
 
   const storesQuery = useQuery({
     queryKey: ['stores', 'all'],
@@ -138,6 +158,90 @@ export function ProductsPage() {
     })
   }
 
+  async function handleExport() {
+    try {
+      setIsExporting(true)
+      const response = await api.get('/products/export', {
+        params: {
+          search: search || undefined,
+          store_id: selectedStoreId || undefined,
+          low_stock: lowStockOnly || undefined,
+        },
+        responseType: 'blob',
+      })
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `inventory_export_${new Date().toISOString().slice(0, 10)}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      setError(apiErrorMessage(err, 'Failed to export inventory.'))
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  async function handleDownloadTemplate() {
+    try {
+      setIsDownloadingTemplate(true)
+      const response = await api.get('/products/template', { responseType: 'blob' })
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'inventory_template.csv'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      setImportError(apiErrorMessage(err, 'Failed to download template.'))
+    } finally {
+      setIsDownloadingTemplate(false)
+    }
+  }
+
+  async function handleImportSubmit(e) {
+    e.preventDefault()
+    if (!importFile) {
+      setImportError('Please select a CSV file to upload.')
+      return
+    }
+    setImportError('')
+    setIsImporting(true)
+
+    const formData = new FormData()
+    formData.append('file', importFile)
+    formData.append('update_existing', updateExisting ? '1' : '0')
+
+    try {
+      const res = await api.post('/products/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setImportResult(res.data)
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['brands'] })
+      queryClient.invalidateQueries({ queryKey: ['vehicle-brands'] })
+      queryClient.invalidateQueries({ queryKey: ['vehicle-models'] })
+    } catch (err) {
+      setImportError(apiErrorMessage(err, 'Failed to import inventory file.'))
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
+  function closeImportModal() {
+    setImportModalOpen(false)
+    setImportFile(null)
+    setImportError('')
+    setImportResult(null)
+  }
+
   const products = productsQuery.data?.data ?? []
   const availableVehicleModels = (vehicleModelsQuery.data ?? []).filter(
     (m) => !form.vehicle_brand_id || String(m.vehicle_brand_id) === String(form.vehicle_brand_id)
@@ -148,7 +252,42 @@ export function ProductsPage() {
       <PageHeader
         title="Inventory"
         description="Spare parts catalog linked with store locations and live stock levels."
-        actions={can('manage_products') && <Button onClick={openCreate}>+ New product</Button>}
+        actions={
+          can('manage_products') && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                onClick={handleExport}
+                disabled={isExporting}
+                className="flex items-center gap-1.5"
+                title="Export inventory to CSV"
+              >
+                <Download className="h-4 w-4" />
+                <span>{isExporting ? 'Exporting…' : 'Export'}</span>
+              </Button>
+
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setImportModalOpen(true)
+                  setImportResult(null)
+                  setImportFile(null)
+                  setImportError('')
+                }}
+                className="flex items-center gap-1.5"
+                title="Bulk import products from CSV"
+              >
+                <Upload className="h-4 w-4" />
+                <span>Import</span>
+              </Button>
+
+              <Button onClick={openCreate} className="flex items-center gap-1.5">
+                <Plus className="h-4 w-4" />
+                <span>New product</span>
+              </Button>
+            </div>
+          )
+        }
       />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
@@ -235,7 +374,7 @@ export function ProductsPage() {
                   <td className="px-4 py-3.5 text-xs">
                     {(p.vehicle_brand || p.vehicle_model) ? (
                       <span className="inline-flex items-center gap-1 rounded bg-[var(--accent-soft)] px-2 py-0.5 font-semibold text-[var(--accent)] whitespace-nowrap">
-                        🚗 {p.vehicle_brand?.name ?? ''} {p.vehicle_model ? `/ ${p.vehicle_model.name}` : ''}
+                        {p.vehicle_brand?.name ?? ''} {p.vehicle_model ? `/ ${p.vehicle_model.name}` : ''}
                       </span>
                     ) : (
                       <span className="text-[var(--muted)]">—</span>
@@ -412,6 +551,154 @@ export function ProductsPage() {
               <Button type="submit" disabled={adjustMutation.isPending}>Apply</Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {importModalOpen && (
+        <Modal
+          title={importResult ? 'Import Results' : 'Import Inventory (CSV)'}
+          onClose={closeImportModal}
+          wide={!!importResult}
+        >
+          {!importResult ? (
+            <form onSubmit={handleImportSubmit} className="flex flex-col gap-4">
+              <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5 text-xs text-[var(--muted)] flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-[var(--ink)] mb-0.5">Need the right format?</p>
+                  <p>Download our sample template with pre-filled columns and instructions.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  disabled={isDownloadingTemplate}
+                  className="shrink-0 flex items-center gap-1 font-bold text-[var(--accent)] hover:underline"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>{isDownloadingTemplate ? 'Downloading…' : 'Template'}</span>
+                </button>
+              </div>
+
+              {/* File Dropzone */}
+              <div>
+                <label className="block text-xs font-semibold text-[var(--ink)] mb-1.5">CSV File</label>
+                <div className="relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[var(--line)] bg-[var(--paper)]/50 p-6 text-center hover:bg-[var(--paper)] transition">
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setImportFile(file)
+                        setImportError('')
+                      }
+                    }}
+                  />
+                  {importFile ? (
+                    <div className="flex flex-col items-center gap-1">
+                      <FileSpreadsheet className="h-8 w-8 text-[var(--accent)]" />
+                      <p className="text-sm font-bold text-[var(--ink)]">{importFile.name}</p>
+                      <p className="text-xs text-[var(--muted)]">
+                        {(importFile.size / 1024).toFixed(1)} KB — Click or drop another to replace
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1.5">
+                      <Upload className="h-7 w-7 text-[var(--muted)]" />
+                      <p className="text-sm font-semibold text-[var(--ink)]">Click to choose or drag & drop CSV file</p>
+                      <p className="text-xs text-[var(--muted)]">Max file size: 10 MB (.csv)</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Update existing checkbox */}
+              <label className="flex items-center gap-2.5 text-xs font-medium text-[var(--ink)] select-none cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={updateExisting}
+                  onChange={(e) => setUpdateExisting(e.target.checked)}
+                  className="rounded border-[var(--line)]"
+                />
+                <span>Update product details if SKU already exists</span>
+              </label>
+
+              {importError && (
+                <div className="flex items-center gap-2 rounded-lg bg-[var(--critical-soft)] p-3 text-xs text-[var(--critical)]">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{importError}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-[var(--line)]">
+                <Button type="button" variant="secondary" onClick={closeImportModal} disabled={isImporting}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={!importFile || isImporting}>
+                  {isImporting ? 'Importing…' : 'Upload & Import'}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3 rounded-xl bg-[var(--success-soft)] p-4 text-[var(--success)]">
+                <CheckCircle2 className="h-6 w-6 shrink-0" />
+                <div>
+                  <p className="text-sm font-bold">Import Completed</p>
+                  <p className="text-xs">{importResult.message}</p>
+                </div>
+              </div>
+
+              {/* Stats badges */}
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
+                  <p className="text-xl font-extrabold text-[var(--success)]">{importResult.created ?? 0}</p>
+                  <p className="text-xs text-[var(--muted)]">Created</p>
+                </div>
+                <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
+                  <p className="text-xl font-extrabold text-[var(--accent)]">{importResult.updated ?? 0}</p>
+                  <p className="text-xs text-[var(--muted)]">Updated</p>
+                </div>
+                <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
+                  <p className="text-xl font-extrabold text-[var(--muted)]">{importResult.skipped ?? 0}</p>
+                  <p className="text-xs text-[var(--muted)]">Skipped</p>
+                </div>
+              </div>
+
+              {/* Error messages if any */}
+              {importResult.errors && importResult.errors.length > 0 && (
+                <div className="rounded-xl border border-[var(--critical-soft)] bg-[var(--critical-soft)]/40 p-3.5">
+                  <p className="text-xs font-bold text-[var(--critical)] mb-1.5 flex items-center gap-1.5">
+                    <AlertCircle className="h-4 w-4" />
+                    Warnings & Skipped Rows ({importResult.errors.length})
+                  </p>
+                  <ul className="max-h-40 overflow-y-auto space-y-1 text-xs text-[var(--critical)] pr-1">
+                    {importResult.errors.map((err, i) => (
+                      <li key={i} className="list-disc list-inside">
+                        {err}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-[var(--line)]">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setImportResult(null)
+                    setImportFile(null)
+                  }}
+                >
+                  Import another
+                </Button>
+                <Button type="button" onClick={closeImportModal}>
+                  Done
+                </Button>
+              </div>
+            </div>
+          )}
         </Modal>
       )}
     </div>
