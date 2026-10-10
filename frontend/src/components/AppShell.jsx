@@ -18,6 +18,8 @@ import {
   LogOut,
   Menu,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
@@ -54,29 +56,76 @@ function ThemeToggle() {
 export function AppShell() {
   const { user, can, logout } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('jms_sidebar_collapsed') === 'true'
+    } catch {
+      return false
+    }
+  })
   const location = useLocation()
+
+  const toggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem('jms_sidebar_collapsed', String(next))
+      } catch {
+        // ignore storage errors
+      }
+      return next
+    })
+  }
 
   // Auto-close mobile drawer on navigation
   useEffect(() => {
     setMobileOpen(false)
   }, [location.pathname])
 
+  const visibleNavItems = NAV.filter((item) => !item.permission || can(item.permission))
+
   return (
     <div className="flex min-h-screen bg-[var(--paper)] text-[var(--ink)]">
       {/* Desktop Sidebar */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-[var(--line)] bg-[var(--surface)] p-5 md:flex">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 border border-[var(--line)] shadow-xs">
-            <img src={logo} alt="Janatha Motors" className="h-full w-full object-contain rounded-full" />
+      <aside
+        className={clsx(
+          'hidden shrink-0 flex-col border-r border-[var(--line)] bg-[var(--surface)] sticky top-0 h-screen transition-all duration-300 ease-in-out md:flex z-30',
+          collapsed ? 'w-20 p-3' : 'w-64 p-5'
+        )}
+      >
+        {/* Sidebar Brand Header */}
+        <div
+          className={clsx(
+            'mb-6 flex items-center transition-all duration-300',
+            collapsed ? 'flex-col gap-2.5 justify-center' : 'justify-between gap-3'
+          )}
+        >
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 border border-[var(--line)] shadow-xs">
+              <img src={logo} alt="Janatha Motors" className="h-full w-full object-contain rounded-full" />
+            </div>
+            {!collapsed && (
+              <div className="truncate min-w-0">
+                <p className="text-sm font-extrabold leading-tight tracking-tight truncate">Janatha Motors</p>
+                <p className="text-xs text-[var(--muted)] truncate">Invoice & Inventory</p>
+              </div>
+            )}
           </div>
-          <div>
-            <p className="text-base font-extrabold leading-tight tracking-tight">Janatha Motors</p>
-            <p className="text-xs text-[var(--muted)]">Invoice & Inventory</p>
-          </div>
+
+          {/* Collapse/Expand Toggle Button */}
+          <button
+            onClick={toggleCollapse}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--line)] text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)] transition"
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
         </div>
 
-        <nav className="flex flex-col gap-1">
-          {NAV.filter((item) => !item.permission || can(item.permission)).map((item) => {
+        {/* Navigation Links */}
+        <nav className="flex flex-col gap-1.5 flex-1 overflow-y-auto pr-0.5">
+          {visibleNavItems.map((item) => {
             const Icon = item.icon
             return (
               <NavLink
@@ -85,19 +134,60 @@ export function AppShell() {
                 end={item.end}
                 className={({ isActive }) =>
                   clsx(
-                    'flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition',
+                    'group relative flex items-center rounded-xl text-sm font-semibold transition',
+                    collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-2.5',
                     isActive
-                      ? 'bg-[var(--accent-soft)] text-[var(--accent)] font-bold'
+                      ? 'bg-[var(--accent-soft)] text-[var(--accent)] font-bold shadow-xs'
                       : 'text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--ink)]'
                   )
                 }
               >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span>{item.label}</span>
+                <Icon className={clsx('shrink-0', collapsed ? 'h-5 w-5' : 'h-4 w-4')} />
+                {!collapsed ? (
+                  <span className="truncate">{item.label}</span>
+                ) : (
+                  /* Floating Tooltip when Collapsed */
+                  <span className="pointer-events-none absolute left-full ml-3.5 z-50 hidden rounded-md bg-[var(--ink)] px-2.5 py-1 text-xs font-semibold text-[var(--surface)] shadow-lg whitespace-nowrap group-hover:block">
+                    {item.label}
+                  </span>
+                )}
               </NavLink>
             )
           })}
         </nav>
+
+        {/* Sidebar Footer (User details or quick logout) */}
+        <div className="pt-3 mt-2 border-t border-[var(--line)]">
+          {!collapsed ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="truncate min-w-0">
+                <p className="text-xs font-bold leading-tight truncate">{user?.name}</p>
+                <p className="text-[11px] text-[var(--muted)] truncate">{user?.roles?.[0]}</p>
+              </div>
+              <button
+                onClick={logout}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--critical)] transition"
+                title="Log out"
+                aria-label="Log out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <button
+                onClick={logout}
+                className="group relative flex h-9 w-9 items-center justify-center rounded-xl text-[var(--muted)] hover:bg-[var(--paper)] hover:text-[var(--critical)] transition"
+                aria-label="Log out"
+              >
+                <LogOut className="h-4.5 w-4.5" />
+                <span className="pointer-events-none absolute left-full ml-3.5 z-50 hidden rounded-md bg-[var(--ink)] px-2.5 py-1 text-xs font-semibold text-[var(--surface)] shadow-lg whitespace-nowrap group-hover:block">
+                  Log out ({user?.name})
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
       </aside>
 
       {/* Mobile Slide-Over Drawer Backdrop */}
@@ -134,7 +224,7 @@ export function AppShell() {
         </div>
 
         <nav className="flex flex-col gap-1 overflow-y-auto flex-1 pr-1">
-          {NAV.filter((item) => !item.permission || can(item.permission)).map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon
             return (
               <NavLink
@@ -174,8 +264,9 @@ export function AppShell() {
 
       {/* Main Content Area */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[var(--line)] bg-[var(--surface)]/90 backdrop-blur-md px-4 sm:px-6 py-3.5">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[var(--line)] bg-[var(--surface)]/90 backdrop-blur-md px-4 sm:px-6 py-3.5">
           <div className="flex items-center gap-3">
+            {/* Mobile Open Drawer Button */}
             <button
               onClick={() => setMobileOpen(true)}
               className="rounded-lg border border-[var(--line)] p-2 text-[var(--ink)] hover:bg-[var(--paper)] md:hidden"
@@ -183,6 +274,18 @@ export function AppShell() {
             >
               <Menu className="h-5 w-5" />
             </button>
+
+            {/* Desktop Quick Sidebar Toggle Button in Header */}
+            <button
+              onClick={toggleCollapse}
+              className="hidden md:flex items-center justify-center rounded-lg border border-[var(--line)] p-2 text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition"
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label="Toggle sidebar"
+            >
+              {collapsed ? <PanelLeftOpen className="h-4.5 w-4.5" /> : <PanelLeftClose className="h-4.5 w-4.5" />}
+            </button>
+
+            {/* Mobile Brand Title */}
             <div className="flex items-center gap-2 md:hidden">
               <img src={logo} alt="Janatha Motors" className="h-7 w-7 rounded-full object-contain" />
               <span className="text-sm font-extrabold tracking-tight">Janatha Motors</span>
