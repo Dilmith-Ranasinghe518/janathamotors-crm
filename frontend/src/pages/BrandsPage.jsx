@@ -7,16 +7,22 @@ import { useAuth } from '../context/AuthContext'
 export function BrandsPage() {
   const { can } = useAuth()
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState('part-brands') // 'part-brands' | 'vehicle-brands' | 'vehicle-models'
-  
+  const [activeTab, setActiveTab] = useState('categories') // 'categories' | 'part-brands' | 'vehicle-brands' | 'vehicle-models'
+
   // Modals & form state
   const [modalOpen, setModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState(null)
   const [name, setName] = useState('')
+  const [parentId, setParentId] = useState('')
   const [vehicleBrandId, setVehicleBrandId] = useState('')
   const [error, setError] = useState('')
 
   // Queries
+  const categoriesQuery = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.get('/categories').then((r) => r.data),
+  })
+
   const partBrandsQuery = useQuery({
     queryKey: ['brands'],
     queryFn: () => api.get('/brands').then((r) => r.data),
@@ -32,12 +38,33 @@ export function BrandsPage() {
     queryFn: () => api.get('/vehicle-models').then((r) => r.data),
   })
 
+  // Category Mutations
+  const saveCategory = useMutation({
+    mutationFn: (payload) =>
+      editingItem ? api.put(`/categories/${editingItem.id}`, payload) : api.post('/categories', payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      closeModal()
+    },
+    onError: (err) => setError(apiErrorMessage(err, 'Could not save category.')),
+  })
+
+  const deleteCategory = useMutation({
+    mutationFn: (id) => api.delete(`/categories/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+  })
+
   // Part Brand Mutations
   const savePartBrand = useMutation({
     mutationFn: (payload) =>
       editingItem ? api.put(`/brands/${editingItem.id}`, payload) : api.post('/brands', payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brands'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
       closeModal()
     },
     onError: (err) => setError(apiErrorMessage(err, 'Could not save part brand.')),
@@ -45,7 +72,10 @@ export function BrandsPage() {
 
   const deletePartBrand = useMutation({
     mutationFn: (id) => api.delete(`/brands/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['brands'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['brands'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
   })
 
   // Vehicle Brand Mutations
@@ -55,6 +85,7 @@ export function BrandsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicle-brands'] })
       queryClient.invalidateQueries({ queryKey: ['vehicle-models'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
       closeModal()
     },
     onError: (err) => setError(apiErrorMessage(err, 'Could not save vehicle brand.')),
@@ -65,6 +96,7 @@ export function BrandsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicle-brands'] })
       queryClient.invalidateQueries({ queryKey: ['vehicle-models'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
     },
   })
 
@@ -75,6 +107,7 @@ export function BrandsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicle-models'] })
       queryClient.invalidateQueries({ queryKey: ['vehicle-brands'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
       closeModal()
     },
     onError: (err) => setError(apiErrorMessage(err, 'Could not save vehicle model.')),
@@ -82,12 +115,16 @@ export function BrandsPage() {
 
   const deleteVehicleModel = useMutation({
     mutationFn: (id) => api.delete(`/vehicle-models/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vehicle-models'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicle-models'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
   })
 
   function openCreate() {
     setEditingItem(null)
     setName('')
+    setParentId('')
     setVehicleBrandId(vehicleBrandsQuery.data?.[0]?.id ? String(vehicleBrandsQuery.data[0].id) : '')
     setError('')
     setModalOpen(true)
@@ -96,7 +133,9 @@ export function BrandsPage() {
   function openEdit(item) {
     setEditingItem(item)
     setName(item.name)
-    if (activeTab === 'vehicle-models') {
+    if (activeTab === 'categories') {
+      setParentId(item.parent_id ? String(item.parent_id) : '')
+    } else if (activeTab === 'vehicle-models') {
       setVehicleBrandId(item.vehicle_brand_id ? String(item.vehicle_brand_id) : '')
     }
     setError('')
@@ -107,6 +146,7 @@ export function BrandsPage() {
     setModalOpen(false)
     setEditingItem(null)
     setName('')
+    setParentId('')
     setVehicleBrandId('')
     setError('')
   }
@@ -115,7 +155,12 @@ export function BrandsPage() {
     e.preventDefault()
     setError('')
 
-    if (activeTab === 'part-brands') {
+    if (activeTab === 'categories') {
+      saveCategory.mutate({
+        name,
+        parent_id: parentId ? Number(parentId) : null,
+      })
+    } else if (activeTab === 'part-brands') {
       savePartBrand.mutate({ name })
     } else if (activeTab === 'vehicle-brands') {
       saveVehicleBrand.mutate({ name })
@@ -128,22 +173,53 @@ export function BrandsPage() {
     }
   }
 
+  const categories = categoriesQuery.data ?? []
   const partBrands = partBrandsQuery.data ?? []
   const vehicleBrands = vehicleBrandsQuery.data ?? []
   const vehicleModels = vehicleModelsQuery.data ?? []
 
-  const isPending = savePartBrand.isPending || saveVehicleBrand.isPending || saveVehicleModel.isPending
+  const isPending =
+    saveCategory.isPending || savePartBrand.isPending || saveVehicleBrand.isPending || saveVehicleModel.isPending
+
+  const getAddButtonText = () => {
+    switch (activeTab) {
+      case 'categories':
+        return 'Category'
+      case 'part-brands':
+        return 'Part Brand'
+      case 'vehicle-brands':
+        return 'Vehicle Brand'
+      case 'vehicle-models':
+        return 'Vehicle Model'
+      default:
+        return 'Item'
+    }
+  }
 
   return (
     <div>
       <PageHeader
         title="Brands & Vehicles"
-        description="Manage spare part brands, vehicle makes, and vehicle models."
-        actions={can('manage_products') && <Button onClick={openCreate}>+ Add {activeTab === 'part-brands' ? 'Part Brand' : activeTab === 'vehicle-brands' ? 'Vehicle Brand' : 'Vehicle Model'}</Button>}
+        description="Manage product categories, spare part brands, vehicle makes, and vehicle models."
+        actions={
+          can('manage_products') && (
+            <Button onClick={openCreate}>+ Add {getAddButtonText()}</Button>
+          )
+        }
       />
 
       {/* Tabs Header */}
       <div className="mb-6 flex overflow-x-auto whitespace-nowrap border-b border-[var(--line)]">
+        <button
+          onClick={() => setActiveTab('categories')}
+          className={`px-5 py-3 text-sm font-semibold border-b-2 transition ${
+            activeTab === 'categories'
+              ? 'border-[var(--accent)] text-[var(--accent)]'
+              : 'border-transparent text-[var(--muted)] hover:text-[var(--ink)]'
+          }`}
+        >
+          Categories ({categories.length})
+        </button>
         <button
           onClick={() => setActiveTab('part-brands')}
           className={`px-5 py-3 text-sm font-semibold border-b-2 transition ${
@@ -176,7 +252,58 @@ export function BrandsPage() {
         </button>
       </div>
 
-      {/* TAB 1: PART BRANDS */}
+      {/* TAB 1: CATEGORIES */}
+      {activeTab === 'categories' && (
+        <Card className="overflow-x-auto">
+          {categoriesQuery.isLoading ? (
+            <p className="p-6 text-sm text-[var(--muted)]">Loading categories…</p>
+          ) : categories.length === 0 ? (
+            <EmptyState message="No categories added yet." />
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)]">
+                  <th className="px-4 py-3">Category Name</th>
+                  <th className="px-4 py-3">Parent Category</th>
+                  <th className="px-4 py-3">Total Products</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.map((c) => (
+                  <tr key={c.id} className="border-b border-[var(--line)] last:border-0">
+                    <td className="px-4 py-3 font-medium text-[var(--ink)]">{c.name}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--muted)]">{c.parent?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--muted)]">{c.products_count ?? 0} items</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {can('manage_products') && (
+                        <>
+                          <button
+                            onClick={() => openEdit(c)}
+                            className="mr-3 text-xs font-semibold text-[var(--accent-2)] hover:underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() =>
+                              window.confirm(`Delete category "${c.name}"?`) && deleteCategory.mutate(c.id)
+                            }
+                            className="text-xs font-semibold text-[var(--critical)] hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+      )}
+
+      {/* TAB 2: PART BRANDS */}
       {activeTab === 'part-brands' && (
         <Card className="overflow-x-auto">
           {partBrandsQuery.isLoading ? (
@@ -223,7 +350,7 @@ export function BrandsPage() {
         </Card>
       )}
 
-      {/* TAB 2: VEHICLE BRANDS */}
+      {/* TAB 3: VEHICLE BRANDS */}
       {activeTab === 'vehicle-brands' && (
         <Card className="overflow-x-auto">
           {vehicleBrandsQuery.isLoading ? (
@@ -273,7 +400,7 @@ export function BrandsPage() {
         </Card>
       )}
 
-      {/* TAB 3: VEHICLE MODELS */}
+      {/* TAB 4: VEHICLE MODELS */}
       {activeTab === 'vehicle-models' && (
         <Card className="overflow-x-auto">
           {vehicleModelsQuery.isLoading ? (
@@ -327,12 +454,29 @@ export function BrandsPage() {
         <Modal
           title={
             editingItem
-              ? `Edit ${activeTab === 'part-brands' ? 'Part Brand' : activeTab === 'vehicle-brands' ? 'Vehicle Brand' : 'Vehicle Model'}`
-              : `New ${activeTab === 'part-brands' ? 'Part Brand' : activeTab === 'vehicle-brands' ? 'Vehicle Brand' : 'Vehicle Model'}`
+              ? `Edit ${getAddButtonText()}`
+              : `New ${getAddButtonText()}`
           }
           onClose={closeModal}
         >
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {activeTab === 'categories' && (
+              <Select
+                label="Parent Category (Optional)"
+                value={parentId}
+                onChange={(e) => setParentId(e.target.value)}
+              >
+                <option value="">— None (Top-level Category) —</option>
+                {categories
+                  .filter((c) => !editingItem || c.id !== editingItem.id)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+              </Select>
+            )}
+
             {activeTab === 'vehicle-models' && (
               <Select
                 label="Vehicle Brand"
@@ -351,7 +495,9 @@ export function BrandsPage() {
 
             <Input
               label={
-                activeTab === 'part-brands'
+                activeTab === 'categories'
+                  ? 'Category Name (e.g. Brakes & Suspension, Filters, Engine)'
+                  : activeTab === 'part-brands'
                   ? 'Part Brand Name (e.g. Denso, Bosch, NGK)'
                   : activeTab === 'vehicle-brands'
                   ? 'Vehicle Brand / Make (e.g. Toyota, Nissan, Honda)'

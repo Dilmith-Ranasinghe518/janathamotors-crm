@@ -10,7 +10,7 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        return Category::with('parent')->orderBy('name')->get();
+        return Category::with('parent')->withCount('products')->orderBy('name')->get();
     }
 
     public function store(Request $request)

@@ -21,11 +21,13 @@ class ProductController extends Controller
             ->with(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel'])
             ->withSum('stockLedger as stock_on_hand', 'quantity')
             ->when($request->filled('store_id'), fn ($q) => $q->where('store_id', $request->input('store_id')))
+            ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->input('category_id')))
             ->when($request->string('search')->isNotEmpty(), function ($q) use ($request) {
                 $term = '%'.$request->string('search').'%';
                 $q->where(fn ($q) => $q->where('name', 'like', $term)
                     ->orWhere('sku', 'like', $term)
                     ->orWhere('compatible_models', 'like', $term)
+                    ->orWhereHas('category', fn ($cq) => $cq->where('name', 'like', $term))
                     ->orWhereHas('brand', fn ($bq) => $bq->where('name', 'like', $term))
                     ->orWhereHas('vehicleBrand', fn ($vbq) => $vbq->where('name', 'like', $term))
                     ->orWhereHas('vehicleModel', fn ($vmq) => $vmq->where('name', 'like', $term))

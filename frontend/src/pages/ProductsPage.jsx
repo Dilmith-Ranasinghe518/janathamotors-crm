@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   MapPin,
@@ -35,6 +36,7 @@ export function ProductsPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [selectedStoreId, setSelectedStoreId] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
   const [lowStockOnly, setLowStockOnly] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -60,13 +62,14 @@ export function ProductsPage() {
   })
 
   const productsQuery = useQuery({
-    queryKey: ['products', search, selectedStoreId, lowStockOnly],
+    queryKey: ['products', search, selectedStoreId, selectedCategoryId, lowStockOnly],
     queryFn: () =>
       api
         .get('/products', {
           params: {
             search: search || undefined,
             store_id: selectedStoreId || undefined,
+            category_id: selectedCategoryId || undefined,
             low_stock: lowStockOnly || undefined,
           },
         })
@@ -313,6 +316,20 @@ export function ProductsPage() {
           </Select>
         </div>
 
+        <div className="w-48 sm:w-60">
+          <Select
+            value={selectedCategoryId}
+            onChange={(e) => setSelectedCategoryId(e.target.value)}
+          >
+            <option value="">All Categories</option>
+            {categoriesQuery.data?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+
         <label className="flex items-center gap-2 text-sm text-[var(--muted)] cursor-pointer select-none">
           <input
             type="checkbox"
@@ -356,7 +373,14 @@ export function ProductsPage() {
                         </span>
                       )}
                     </div>
-                    {p.brand && <div className="text-xs text-[var(--muted)] mt-0.5">Brand: {p.brand.name}</div>}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 text-xs text-[var(--muted)]">
+                      {p.category && (
+                        <span className="rounded bg-[var(--paper)] px-1.5 py-0.2 text-[11px] font-medium text-[var(--ink)] border border-[var(--line)]">
+                          {p.category.name}
+                        </span>
+                      )}
+                      {p.brand && <span>Brand: {p.brand.name}</span>}
+                    </div>
                   </td>
                   <td className="px-4 py-3.5 text-xs whitespace-nowrap">
                     {p.store ? (
@@ -424,14 +448,36 @@ export function ProductsPage() {
             <Input label="SKU" required value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
             <Input label="Item Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             
-            <Select label="Category" value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
+            <Select
+              label={
+                <span className="flex items-center justify-between">
+                  <span>Category</span>
+                  <Link to="/brands" target="_blank" className="text-xs font-normal text-[var(--accent-2)] hover:underline">
+                    Manage ↗
+                  </Link>
+                </span>
+              }
+              value={form.category_id}
+              onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+            >
               <option value="">— Select Category —</option>
               {categoriesQuery.data?.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </Select>
 
-            <Select label="Part Brand (Manufacturer)" value={form.brand_id} onChange={(e) => setForm({ ...form, brand_id: e.target.value })}>
+            <Select
+              label={
+                <span className="flex items-center justify-between">
+                  <span>Part Brand (Manufacturer)</span>
+                  <Link to="/brands" target="_blank" className="text-xs font-normal text-[var(--accent-2)] hover:underline">
+                    Manage ↗
+                  </Link>
+                </span>
+              }
+              value={form.brand_id}
+              onChange={(e) => setForm({ ...form, brand_id: e.target.value })}
+            >
               <option value="">— Select Part Brand —</option>
               {brandsQuery.data?.map((b) => (
                 <option key={b.id} value={b.id}>{b.name}</option>
@@ -453,7 +499,14 @@ export function ProductsPage() {
             </Select>
 
             <Select
-              label="Vehicle Brand / Make"
+              label={
+                <span className="flex items-center justify-between">
+                  <span>Vehicle Brand / Make</span>
+                  <Link to="/brands" target="_blank" className="text-xs font-normal text-[var(--accent-2)] hover:underline">
+                    Manage ↗
+                  </Link>
+                </span>
+              }
               value={form.vehicle_brand_id}
               onChange={(e) => {
                 const newBrandId = e.target.value
