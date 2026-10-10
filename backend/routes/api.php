@@ -21,8 +21,9 @@ use App\Http\Controllers\Api\VehicleModelController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/maintenance-status', [SettingController::class, 'publicStatus']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/user/password', [AuthController::class, 'updatePassword']);
@@ -60,4 +61,5 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/settings', [SettingController::class, 'index']);
     Route::put('/settings', [SettingController::class, 'update'])->middleware('permission:manage_settings');
+    Route::post('/settings/maintenance', [SettingController::class, 'toggleMaintenance'])->middleware('permission:manage_settings');
 });

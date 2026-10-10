@@ -16,11 +16,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isMaintenance = error.response?.status === 503 && error.response?.data?.maintenance_mode
+    if (error.response?.status === 401 || isMaintenance) {
       localStorage.removeItem('jms_token')
       localStorage.removeItem('jms_user')
       if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = '/login'
+        window.location.href = isMaintenance ? '/login?maintenance=1' : '/login'
       }
     }
     return Promise.reject(error)

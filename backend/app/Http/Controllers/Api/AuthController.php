@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -28,6 +29,15 @@ class AuthController extends Controller
         if (! $user->is_active) {
             throw ValidationException::withMessages([
                 'email' => ['This account has been deactivated.'],
+            ]);
+        }
+
+        $isMaintenance = Setting::get('maintenance_mode') === 'true' || Setting::get('maintenance_mode') === '1';
+        if ($isMaintenance && ! $user->hasRole('Admin')) {
+            $msg = Setting::get('maintenance_message')
+                ?: 'The system is currently in maintenance mode. Only administrators can sign in at this time.';
+            throw ValidationException::withMessages([
+                'email' => [$msg],
             ]);
         }
 

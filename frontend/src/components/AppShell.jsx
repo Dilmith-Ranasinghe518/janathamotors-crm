@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
 import {
   LayoutDashboard,
@@ -20,9 +21,11 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  AlertTriangle,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { api } from '../lib/api'
 import logo from '../assets/logo.webp'
 
 const NAV = [
@@ -66,6 +69,12 @@ export function AppShell() {
     }
   })
   const location = useLocation()
+
+  const { data: maintenanceInfo } = useQuery({
+    queryKey: ['maintenance-status'],
+    queryFn: () => api.get('/maintenance-status').then((r) => r.data),
+    refetchInterval: 30000,
+  })
 
   const handleConfirmLogout = async () => {
     try {
@@ -276,6 +285,24 @@ export function AppShell() {
 
       {/* Main Content Area */}
       <div className="flex min-w-0 flex-1 flex-col">
+        {maintenanceInfo?.maintenance_mode && (
+          <div className="bg-amber-500 text-amber-950 px-4 py-2 text-xs font-bold flex items-center justify-between border-b border-amber-600/30 shrink-0 z-30 shadow-xs">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-900 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-950"></span>
+              </span>
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-950" />
+              <span>MAINTENANCE MODE ACTIVE — Non-admin users are locked out and sessions terminated.</span>
+            </div>
+            {can('manage_settings') && (
+              <Link to="/settings" className="underline hover:text-black shrink-0 ml-3">
+                Manage in Settings →
+              </Link>
+            )}
+          </div>
+        )}
+
         <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[var(--line)] bg-[var(--surface)]/90 backdrop-blur-md px-4 sm:px-6 py-3.5">
           <div className="flex items-center gap-3">
             {/* Mobile Open Drawer Button */}
