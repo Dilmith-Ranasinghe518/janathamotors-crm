@@ -1,0 +1,19 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Prevent directory listing
+    Options -Indexes
+
+    # Block direct access to sensitive root and backend files
+    RewriteRule ^(\.git|\.env|composer\.(json|lock)|package(-lock)?\.json|Dockerfile|render\.yaml) - [F,L]
+    RewriteRule ^backend/(\.env|app|bootstrap|config|database|storage|tests|vendor) - [F,L]
+    RewriteRule ^frontend/(src|node_modules|\.env) - [F,L]
+
+    # Ensure Authorization header is passed to PHP
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Route all incoming requests to Laravel's public directory
+    RewriteCond %{REQUEST_URI} !^/backend/public/
+    RewriteRule ^(.*)$ backend/public/$1 [L]
+</IfModule>
