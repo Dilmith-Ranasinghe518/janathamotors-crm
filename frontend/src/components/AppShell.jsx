@@ -275,16 +275,6 @@ export function AppShell() {
               <Menu className="h-5 w-5" />
             </button>
 
-            {/* Desktop Quick Sidebar Toggle Button in Header */}
-            <button
-              onClick={toggleCollapse}
-              className="hidden md:flex items-center justify-center rounded-lg border border-[var(--line)] p-2 text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition"
-              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              aria-label="Toggle sidebar"
-            >
-              {collapsed ? <PanelLeftOpen className="h-4.5 w-4.5" /> : <PanelLeftClose className="h-4.5 w-4.5" />}
-            </button>
-
             {/* Mobile Brand Title */}
             <div className="flex items-center gap-2 md:hidden">
               <img src={logo} alt="Janatha Motors" className="h-7 w-7 rounded-full object-contain" />
@@ -294,19 +284,6 @@ export function AppShell() {
 
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <div className="hidden sm:flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm font-semibold leading-tight">{user?.name}</p>
-                <p className="text-xs text-[var(--muted)] leading-tight">{user?.roles?.[0]}</p>
-              </div>
-              <button
-                onClick={logout}
-                className="flex items-center gap-1.5 rounded-xl border border-[var(--line)] px-3 py-1.5 text-xs font-semibold hover:bg-[var(--paper)] transition"
-              >
-                <LogOut className="h-3.5 w-3.5 text-[var(--muted)]" />
-                <span>Log out</span>
-              </button>
-            </div>
           </div>
         </header>
 
