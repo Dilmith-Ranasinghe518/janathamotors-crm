@@ -15,6 +15,7 @@ import {
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
+import { ProductQrModal, ProductQrThumb } from '../components/ProductQr'
 
 const emptyForm = {
   item_no: '',
@@ -47,6 +48,7 @@ export function ProductsPage() {
   const [adjustQty, setAdjustQty] = useState('')
   const [adjustStoreId, setAdjustStoreId] = useState('')
   const [error, setError] = useState('')
+  const [qrProduct, setQrProduct] = useState(null)
 
   // Import & Export states
   const [isExporting, setIsExporting] = useState(false)
@@ -355,6 +357,7 @@ export function ProductsPage() {
             <thead>
               <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)] bg-[var(--paper)]/50">
                 <th className="px-4 py-3 whitespace-nowrap">Item / Part No</th>
+                <th className="px-4 py-3 whitespace-nowrap">QR</th>
                 <th className="px-4 py-3 whitespace-nowrap">Name & Brand</th>
                 <th className="px-4 py-3 whitespace-nowrap">Store Location</th>
                 <th className="px-4 py-3 whitespace-nowrap">Vehicle Compatibility</th>
@@ -371,6 +374,9 @@ export function ProductsPage() {
                     <div className="font-semibold text-[var(--ink)]">{p.item_no}</div>
                     {p.part_no && <div className="text-[var(--muted)]">Part: {p.part_no}</div>}
                     {p.item_code && <div className="text-[var(--muted)]">Code: {p.item_code}</div>}
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <ProductQrThumb product={p} onClick={() => setQrProduct(p)} />
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="font-bold text-[var(--ink)] leading-snug">
@@ -569,6 +575,8 @@ export function ProductsPage() {
           </form>
         </Modal>
       )}
+
+      {qrProduct && <ProductQrModal product={qrProduct} onClose={() => setQrProduct(null)} />}
 
       {adjusting && (
         <Modal title={`Adjust stock — ${adjusting.name}`} onClose={() => setAdjusting(null)}>
