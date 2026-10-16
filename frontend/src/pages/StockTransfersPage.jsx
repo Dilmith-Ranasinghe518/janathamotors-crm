@@ -331,7 +331,7 @@ export function StockTransfersPage() {
                       <option value="">— Select Inventory Product —</option>
                       {products.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.sku} | {p.name} (Stock: {p.stock_on_hand})
+                          {p.item_no}{p.part_no ? ` / ${p.part_no}` : ''} | {p.name} (Stock: {p.stock_on_hand})
                         </option>
                       ))}
                     </Select>
@@ -436,7 +436,7 @@ export function StockTransfersPage() {
                 <table className="w-full text-xs">
                   <thead className="bg-[var(--paper)] border-b border-[var(--line)] text-left uppercase text-[var(--muted)]">
                     <tr>
-                      <th className="px-3 py-2">SKU</th>
+                      <th className="px-3 py-2">Item No</th>
                       <th className="px-3 py-2">Product Name</th>
                       <th className="px-3 py-2 text-right">Quantity</th>
                       <th className="px-3 py-2">Line Note</th>
@@ -445,7 +445,7 @@ export function StockTransfersPage() {
                   <tbody>
                     {detailTransfer.items?.map((item, i) => (
                       <tr key={i} className="border-b border-[var(--line)] last:border-0">
-                        <td className="px-3 py-2 font-mono">{item.product?.sku}</td>
+                        <td className="px-3 py-2 font-mono">{item.product?.item_no}</td>
                         <td className="px-3 py-2 font-semibold text-[var(--ink)]">{item.product?.name}</td>
                         <td className="px-3 py-2 text-right font-bold tabular-nums text-[var(--accent)]">{item.quantity} {item.product?.unit}</td>
                         <td className="px-3 py-2 text-[var(--muted)]">{item.notes ?? '—'}</td>

@@ -25,7 +25,9 @@ class ProductController extends Controller
             ->when($request->string('search')->isNotEmpty(), function ($q) use ($request) {
                 $term = '%'.$request->string('search').'%';
                 $q->where(fn ($q) => $q->where('name', 'like', $term)
-                    ->orWhere('sku', 'like', $term)
+                    ->orWhere('item_no', 'like', $term)
+                    ->orWhere('part_no', 'like', $term)
+                    ->orWhere('item_code', 'like', $term)
                     ->orWhere('compatible_models', 'like', $term)
                     ->orWhereHas('category', fn ($cq) => $cq->where('name', 'like', $term))
                     ->orWhereHas('brand', fn ($bq) => $bq->where('name', 'like', $term))
@@ -46,7 +48,9 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'sku' => ['required', 'string', 'max:100', 'unique:products,sku'],
+            'item_no' => ['required', 'string', 'max:100', 'unique:products,item_no'],
+            'part_no' => ['nullable', 'string', 'max:100'],
+            'item_code' => ['nullable', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'brand_id' => ['nullable', 'exists:brands,id'],
@@ -78,7 +82,9 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $data = $request->validate([
-            'sku' => ['required', 'string', 'max:100', 'unique:products,sku,'.$product->id],
+            'item_no' => ['required', 'string', 'max:100', 'unique:products,item_no,'.$product->id],
+            'part_no' => ['nullable', 'string', 'max:100'],
+            'item_code' => ['nullable', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'brand_id' => ['nullable', 'exists:brands,id'],
@@ -117,7 +123,9 @@ class ProductController extends Controller
             ->when($request->string('search')->isNotEmpty(), function ($q) use ($request) {
                 $term = '%'.$request->string('search').'%';
                 $q->where(fn ($q) => $q->where('name', 'like', $term)
-                    ->orWhere('sku', 'like', $term)
+                    ->orWhere('item_no', 'like', $term)
+                    ->orWhere('part_no', 'like', $term)
+                    ->orWhere('item_code', 'like', $term)
                     ->orWhere('compatible_models', 'like', $term)
                     ->orWhereHas('brand', fn ($bq) => $bq->where('name', 'like', $term))
                     ->orWhereHas('vehicleBrand', fn ($vbq) => $vbq->where('name', 'like', $term))
@@ -147,7 +155,9 @@ class ProductController extends Controller
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($file, [
-                'SKU',
+                'Item No',
+                'Part No',
+                'Item Code',
                 'Name',
                 'Brand',
                 'Category',
@@ -164,7 +174,9 @@ class ProductController extends Controller
 
             foreach ($products as $p) {
                 fputcsv($file, [
-                    $p->sku,
+                    $p->item_no,
+                    $p->part_no ?? '',
+                    $p->item_code ?? '',
                     $p->name,
                     $p->brand?->name ?? '',
                     $p->category?->name ?? '',
@@ -200,7 +212,9 @@ class ProductController extends Controller
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($file, [
-                'SKU',
+                'Item No',
+                'Part No',
+                'Item Code',
                 'Name',
                 'Brand',
                 'Category',
@@ -217,6 +231,8 @@ class ProductController extends Controller
 
             fputcsv($file, [
                 'AF-PER-AXIA',
+                '17801-B2050',
+                'AF001',
                 'Air Filter - Perodua Axia 1.0',
                 'Denso',
                 'Filters',
@@ -233,6 +249,8 @@ class ProductController extends Controller
 
             fputcsv($file, [
                 'BP-BOSCH-BEZ',
+                '0986AB1234',
+                'BP001',
                 'Front Brake Pads - Perodua Bezza',
                 'Bosch',
                 'Brakes',
@@ -284,8 +302,12 @@ class ProductController extends Controller
             $clean = strtolower(trim(preg_replace('/[^a-zA-Z0-9_]/', '_', (string) $col)));
             $clean = trim($clean, '_');
 
-            if (in_array($clean, ['sku', 'part_no', 'part_number', 'item_code', 'code'])) {
-                $columnMap['sku'] = $index;
+            if (in_array($clean, ['item_no', 'item_number', 'sku'])) {
+                $columnMap['item_no'] = $index;
+            } elseif (in_array($clean, ['part_no', 'part_number', 'oem_no', 'oem_number'])) {
+                $columnMap['part_no'] = $index;
+            } elseif (in_array($clean, ['item_code', 'code'])) {
+                $columnMap['item_code'] = $index;
             } elseif (in_array($clean, ['name', 'product_name', 'item_name', 'title'])) {
                 $columnMap['name'] = $index;
             } elseif (in_array($clean, ['brand', 'brand_name'])) {
@@ -313,10 +335,10 @@ class ProductController extends Controller
             }
         }
 
-        if (! isset($columnMap['sku']) || ! isset($columnMap['name'])) {
+        if (! isset($columnMap['item_no']) || ! isset($columnMap['name'])) {
             fclose($handle);
             return response()->json([
-                'message' => "Invalid CSV format: The file must contain at least 'SKU' and 'Name' columns.",
+                'message' => "Invalid CSV format: The file must contain at least 'Item No' and 'Name' columns.",
             ], 422);
         }
 
@@ -345,17 +367,19 @@ class ProductController extends Controller
                 continue;
             }
 
-            $sku = isset($columnMap['sku']) && isset($row[$columnMap['sku']]) ? trim((string) $row[$columnMap['sku']]) : '';
+            $itemNo = isset($row[$columnMap['item_no']]) ? trim((string) $row[$columnMap['item_no']]) : '';
+            $partNo = isset($columnMap['part_no']) ? trim((string) ($row[$columnMap['part_no']] ?? '')) : '';
+            $itemCode = isset($columnMap['item_code']) ? trim((string) ($row[$columnMap['item_code']] ?? '')) : '';
             $name = isset($columnMap['name']) && isset($row[$columnMap['name']]) ? trim((string) $row[$columnMap['name']]) : '';
 
-            if (empty($sku)) {
-                $errors[] = "Row {$rowNumber}: Missing SKU. Row skipped.";
+            if ($itemNo === '') {
+                $errors[] = "Row {$rowNumber}: Missing Item No. Row skipped.";
                 $skipped++;
                 continue;
             }
 
             if (empty($name)) {
-                $errors[] = "Row {$rowNumber} (SKU {$sku}): Missing product name. Row skipped.";
+                $errors[] = "Row {$rowNumber} (Item No {$itemNo}): Missing product name. Row skipped.";
                 $skipped++;
                 continue;
             }
@@ -444,7 +468,7 @@ class ProductController extends Controller
             $stockSpecified = isset($columnMap['stock']) && is_numeric(trim((string) ($row[$columnMap['stock']] ?? '')));
             $targetStock = $stockSpecified ? (int) trim((string) $row[$columnMap['stock']]) : 0;
 
-            $product = Product::where('sku', $sku)->first();
+            $product = Product::where('item_no', $itemNo)->first();
 
             if ($product) {
                 if (! $updateExisting) {
@@ -453,6 +477,8 @@ class ProductController extends Controller
                 }
 
                 $product->update([
+                    'part_no' => $partNo !== '' ? $partNo : $product->part_no,
+                    'item_code' => $itemCode !== '' ? $itemCode : $product->item_code,
                     'name' => $name,
                     'category_id' => $categoryId ?? $product->category_id,
                     'brand_id' => $brandId ?? $product->brand_id,
@@ -484,7 +510,9 @@ class ProductController extends Controller
                 $updated++;
             } else {
                 $newProduct = Product::create([
-                    'sku' => $sku,
+                    'item_no' => $itemNo,
+                    'part_no' => $partNo !== '' ? $partNo : null,
+                    'item_code' => $itemCode !== '' ? $itemCode : null,
                     'name' => $name,
                     'category_id' => $categoryId,
                     'brand_id' => $brandId,

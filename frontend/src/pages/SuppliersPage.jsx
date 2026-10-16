@@ -218,7 +218,7 @@ export function SuppliersPage() {
                         <option value="">Select product…</option>
                         {products.map((p) => (
                           <option key={p.id} value={p.id}>
-                            {p.name} {p.brand ? `[${p.brand.name}]` : ''} — {p.sku} (Current Stock: {p.stock_on_hand})
+                            {p.name} {p.brand ? `[${p.brand.name}]` : ''} — {p.item_no}{p.part_no ? ` / ${p.part_no}` : ''} (Current Stock: {p.stock_on_hand})
                           </option>
                         ))}
                       </Select>

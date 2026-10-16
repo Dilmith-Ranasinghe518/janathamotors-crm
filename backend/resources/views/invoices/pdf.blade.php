@@ -118,7 +118,7 @@
         <thead>
             <tr>
                 <th style="width: 5%; text-align: center;">#</th>
-                <th style="width: 18%;">SKU</th>
+                <th style="width: 18%;">Item / Part No</th>
                 <th style="width: 39%;">Item Description</th>
                 <th style="width: 8%; text-align: center;">Qty</th>
                 <th style="width: 10%; text-align: right;">Unit Price</th>
@@ -130,7 +130,12 @@
             @foreach($invoice->items as $index => $item)
             <tr>
                 <td style="text-align: center; color: #64748b; font-weight: bold;">{{ $index + 1 }}</td>
-                <td><span class="sku-badge">{{ $item->product->sku }}</span></td>
+                <td>
+                    <span class="sku-badge">{{ $item->product->item_no }}</span>
+                    @if($item->product->part_no)
+                        <div style="font-size: 8.5px; color: #64748b; margin-top: 2px;">{{ $item->product->part_no }}</div>
+                    @endif
+                </td>
                 <td>
                     <strong>{{ $item->product->name }}</strong>
                     @if($item->product->brand)

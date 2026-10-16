@@ -12,7 +12,7 @@ class StockController extends Controller
     public function index(Request $request)
     {
         return StockLedger::query()
-            ->with(['product:id,sku,name', 'store:id,name,code,location'])
+            ->with(['product:id,item_no,part_no,item_code,name', 'store:id,name,code,location'])
             ->when($request->integer('product_id'), fn ($q, $productId) => $q->where('product_id', $productId))
             ->when($request->integer('store_id'), fn ($q, $storeId) => $q->where('store_id', $storeId))
             ->latest()

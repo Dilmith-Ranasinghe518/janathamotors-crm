@@ -26,7 +26,7 @@ class DashboardController extends Controller
             'sales_this_month' => $salesSince($monthStart),
             'outstanding_due' => Invoice::where('status', '!=', 'cancelled')->sum('due_amount'),
             'low_stock_products' => Product::query()
-                ->select('id', 'sku', 'name', 'reorder_level')
+                ->select('id', 'item_no', 'part_no', 'name', 'reorder_level')
                 ->whereRaw('(select coalesce(sum(quantity), 0) from stock_ledger where stock_ledger.product_id = products.id) <= products.reorder_level')
                 ->limit(10)
                 ->get(),

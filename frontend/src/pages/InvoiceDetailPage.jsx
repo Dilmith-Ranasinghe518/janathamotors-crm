@@ -148,7 +148,7 @@ export function InvoiceDetailPage() {
           <tbody>
             {invoice.items.map((item) => (
               <tr key={item.id} className="border-b border-[var(--line)] last:border-0">
-                <td className="px-4 py-3">{item.product.name} <span className="text-xs text-[var(--muted)]">({item.product.sku})</span></td>
+                <td className="px-4 py-3">{item.product.name} <span className="text-xs text-[var(--muted)]">({item.product.item_no}{item.product.part_no ? ` / ${item.product.part_no}` : ''})</span></td>
                 <td className="px-4 py-3 text-right tabular-nums">{item.quantity}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{Number(item.unit_price).toFixed(2)}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{Number(item.discount).toFixed(2)}</td>

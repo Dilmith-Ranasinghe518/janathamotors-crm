@@ -110,7 +110,7 @@ function CustomerSearchInput({ customers, customerName, onSelectCustomer, onName
 }
 
 /**
- * Product Auto-suggest Input Component with SKU search
+ * Product Auto-suggest Input Component with Item No / Part No / Item Code search
  */
 function ProductSearchInput({ products, line, index, onSelectProduct, onClearProduct }) {
   const [query, setQuery] = useState(line.product_name || '')
@@ -128,7 +128,9 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
       .filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
-          p.sku.toLowerCase().includes(q) ||
+          p.item_no.toLowerCase().includes(q) ||
+          (p.part_no && p.part_no.toLowerCase().includes(q)) ||
+          (p.item_code && p.item_code.toLowerCase().includes(q)) ||
           (p.vehicle_model && p.vehicle_model.name.toLowerCase().includes(q))
       )
       .slice(0, 10)
@@ -147,7 +149,7 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
   return (
     <div ref={wrapperRef} className="relative w-full">
       <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
-        Select Product / Part SKU
+        Select Product / Part
       </label>
 
       <div className="relative flex items-center">
@@ -157,7 +159,7 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
 
         <input
           type="text"
-          placeholder="Type SKU, part name, or vehicle model…"
+          placeholder="Type item no, part no, item code, name, or vehicle model…"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
@@ -196,7 +198,8 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
               <div className="flex flex-col">
                 <span className="font-bold text-[var(--ink)]">{product.name}</span>
                 <span className="text-xs text-[var(--muted)]">
-                  SKU: <strong className="font-mono text-[var(--ink)]">{product.sku}</strong>
+                  Item No: <strong className="font-mono text-[var(--ink)]">{product.item_no}</strong>
+                  {product.part_no && <> • Part No: <strong className="font-mono text-[var(--ink)]">{product.part_no}</strong></>}
                   {product.brand && ` • Brand: ${product.brand.name}`}
                 </span>
               </div>
@@ -289,7 +292,7 @@ export function InvoiceCreatePage() {
         setLines(
           inv.items.map((item) => ({
             product_id: item.product_id,
-            product_name: `${item.product?.name || ''} (${item.product?.sku || ''})`,
+            product_name: `${item.product?.name || ''} (${item.product?.item_no || ''})`,
             product_data: item.product,
             quantity: item.quantity,
             unit_price: String(item.unit_price),
@@ -352,7 +355,7 @@ export function InvoiceCreatePage() {
   function handleSelectProduct(index, product) {
     updateLine(index, {
       product_id: product.id,
-      product_name: `${product.name} (${product.sku})`,
+      product_name: `${product.name} (${product.item_no})`,
       product_data: product,
       unit_price: product.selling_price,
     })

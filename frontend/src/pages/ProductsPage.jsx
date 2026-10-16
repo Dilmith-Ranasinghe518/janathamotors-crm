@@ -17,7 +17,9 @@ import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../c
 import { useAuth } from '../context/AuthContext'
 
 const emptyForm = {
-  sku: '',
+  item_no: '',
+  part_no: '',
+  item_code: '',
   name: '',
   category_id: '',
   brand_id: '',
@@ -119,7 +121,9 @@ export function ProductsPage() {
   function openEdit(product) {
     setEditing(product)
     setForm({
-      sku: product.sku,
+      item_no: product.item_no,
+      part_no: product.part_no ?? '',
+      item_code: product.item_code ?? '',
       name: product.name,
       category_id: product.category_id ?? '',
       brand_id: product.brand_id ?? '',
@@ -296,7 +300,7 @@ export function ProductsPage() {
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="w-64 sm:w-80">
           <Input
-            placeholder="Search by name, SKU, brand, or vehicle…"
+            placeholder="Search by name, item no, part no, item code, brand, or vehicle…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -350,7 +354,7 @@ export function ProductsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)] bg-[var(--paper)]/50">
-                <th className="px-4 py-3 whitespace-nowrap">SKU</th>
+                <th className="px-4 py-3 whitespace-nowrap">Item / Part No</th>
                 <th className="px-4 py-3 whitespace-nowrap">Name & Brand</th>
                 <th className="px-4 py-3 whitespace-nowrap">Store Location</th>
                 <th className="px-4 py-3 whitespace-nowrap">Vehicle Compatibility</th>
@@ -363,7 +367,11 @@ export function ProductsPage() {
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)]/40 transition">
-                  <td className="px-4 py-3.5 font-mono text-xs font-semibold whitespace-nowrap text-[var(--ink)]">{p.sku}</td>
+                  <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap">
+                    <div className="font-semibold text-[var(--ink)]">{p.item_no}</div>
+                    {p.part_no && <div className="text-[var(--muted)]">Part: {p.part_no}</div>}
+                    {p.item_code && <div className="text-[var(--muted)]">Code: {p.item_code}</div>}
+                  </td>
                   <td className="px-4 py-3.5">
                     <div className="font-bold text-[var(--ink)] leading-snug">
                       {p.name}
@@ -445,8 +453,10 @@ export function ProductsPage() {
       {formOpen && (
         <Modal title={editing ? 'Edit product' : 'New product'} onClose={closeForm} wide>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-            <Input label="SKU" required value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} />
+            <Input label="Item No" required value={form.item_no} onChange={(e) => setForm({ ...form, item_no: e.target.value })} />
             <Input label="Item Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Input label="Part No" placeholder="Manufacturer / OEM part number" value={form.part_no} onChange={(e) => setForm({ ...form, part_no: e.target.value })} />
+            <Input label="Item Code" value={form.item_code} onChange={(e) => setForm({ ...form, item_code: e.target.value })} />
             
             <Select
               label={
@@ -673,7 +683,7 @@ export function ProductsPage() {
                   onChange={(e) => setUpdateExisting(e.target.checked)}
                   className="rounded border-[var(--line)]"
                 />
-                <span>Update product details if SKU already exists</span>
+                <span>Update product details if Item No already exists</span>
               </label>
 
               {importError && (

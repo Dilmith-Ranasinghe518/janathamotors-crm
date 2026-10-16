@@ -18,7 +18,7 @@ class StockTransferController extends Controller
                 'fromStore:id,name,code,location',
                 'toStore:id,name,code,location',
                 'creator:id,name',
-                'items.product:id,sku,name,unit',
+                'items.product:id,item_no,part_no,item_code,name,unit',
             ]);
 
         if ($request->filled('from_store_id')) {
@@ -107,7 +107,7 @@ class StockTransferController extends Controller
                 'fromStore:id,name,code,location',
                 'toStore:id,name,code,location',
                 'creator:id,name',
-                'items.product:id,sku,name,unit',
+                'items.product:id,item_no,part_no,item_code,name,unit',
             ]),
             201
         );
@@ -120,7 +120,7 @@ class StockTransferController extends Controller
                 'fromStore:id,name,code,location,address',
                 'toStore:id,name,code,location,address',
                 'creator:id,name',
-                'items.product:id,sku,name,unit,cost_price,selling_price',
+                'items.product:id,item_no,part_no,item_code,name,unit,cost_price,selling_price',
             ])
         );
     }
