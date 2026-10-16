@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'item_no', 'part_no', 'item_code', 'name', 'category_id', 'brand_id', 'store_id', 'vehicle_brand_id', 'vehicle_model_id', 'compatible_models',
+    'item_no', 'part_no', 'item_code', 'name', 'category_id', 'brand_id', 'store_id', 'shelf_location', 'vehicle_brand_id', 'vehicle_model_id', 'compatible_models',
     'cost_price', 'selling_price', 'unit', 'reorder_level', 'is_active',
 ])]
 class Product extends Model

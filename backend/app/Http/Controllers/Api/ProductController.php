@@ -29,6 +29,7 @@ class ProductController extends Controller
                     ->orWhere('part_no', 'like', $term)
                     ->orWhere('item_code', 'like', $term)
                     ->orWhere('compatible_models', 'like', $term)
+                    ->orWhere('shelf_location', 'like', $term)
                     ->orWhereHas('category', fn ($cq) => $cq->where('name', 'like', $term))
                     ->orWhereHas('brand', fn ($bq) => $bq->where('name', 'like', $term))
                     ->orWhereHas('vehicleBrand', fn ($vbq) => $vbq->where('name', 'like', $term))
@@ -86,6 +87,7 @@ class ProductController extends Controller
             'category_id' => ['nullable', 'exists:categories,id'],
             'brand_id' => ['nullable', 'exists:brands,id'],
             'store_id' => ['nullable', 'exists:stores,id'],
+            'shelf_location' => ['nullable', 'string', 'max:100'],
             'vehicle_brand_id' => ['nullable', 'exists:vehicle_brands,id'],
             'vehicle_model_id' => ['nullable', 'exists:vehicle_models,id'],
             'compatible_models' => ['nullable', 'string'],
@@ -120,6 +122,7 @@ class ProductController extends Controller
             'category_id' => ['nullable', 'exists:categories,id'],
             'brand_id' => ['nullable', 'exists:brands,id'],
             'store_id' => ['nullable', 'exists:stores,id'],
+            'shelf_location' => ['nullable', 'string', 'max:100'],
             'vehicle_brand_id' => ['nullable', 'exists:vehicle_brands,id'],
             'vehicle_model_id' => ['nullable', 'exists:vehicle_models,id'],
             'compatible_models' => ['nullable', 'string'],
@@ -158,6 +161,7 @@ class ProductController extends Controller
                     ->orWhere('part_no', 'like', $term)
                     ->orWhere('item_code', 'like', $term)
                     ->orWhere('compatible_models', 'like', $term)
+                    ->orWhere('shelf_location', 'like', $term)
                     ->orWhereHas('brand', fn ($bq) => $bq->where('name', 'like', $term))
                     ->orWhereHas('vehicleBrand', fn ($vbq) => $vbq->where('name', 'like', $term))
                     ->orWhereHas('vehicleModel', fn ($vmq) => $vmq->where('name', 'like', $term))
@@ -193,6 +197,7 @@ class ProductController extends Controller
                 'Brand',
                 'Category',
                 'Store Code',
+                'Shelf Location',
                 'Vehicle Brand',
                 'Vehicle Model',
                 'Compatible Models',
@@ -212,6 +217,7 @@ class ProductController extends Controller
                     $p->brand?->name ?? '',
                     $p->category?->name ?? '',
                     $p->store?->code ?? $p->store?->name ?? '',
+                    $p->shelf_location ?? '',
                     $p->vehicleBrand?->name ?? '',
                     $p->vehicleModel?->name ?? '',
                     $p->compatible_models ?? '',
@@ -250,6 +256,7 @@ class ProductController extends Controller
                 'Brand',
                 'Category',
                 'Store Code',
+                'Shelf Location',
                 'Vehicle Brand',
                 'Vehicle Model',
                 'Compatible Models',
@@ -268,6 +275,7 @@ class ProductController extends Controller
                 'Denso',
                 'Filters',
                 'JMS-01',
+                'Rack A3',
                 'Perodua',
                 'Axia',
                 'Axia 1.0 (1KR-VE)',
@@ -286,6 +294,7 @@ class ProductController extends Controller
                 'Bosch',
                 'Brakes',
                 'JMS-01',
+                'Rack B1, Bin 4',
                 'Perodua',
                 'Bezza',
                 'Bezza 1.0 / 1.3 (2016-on)',
@@ -347,6 +356,8 @@ class ProductController extends Controller
                 $columnMap['category'] = $index;
             } elseif (in_array($clean, ['store', 'store_code', 'store_location', 'outlet', 'location'])) {
                 $columnMap['store'] = $index;
+            } elseif (in_array($clean, ['shelf_location', 'shelf', 'rack', 'rack_location', 'bin', 'bin_location'])) {
+                $columnMap['shelf_location'] = $index;
             } elseif (in_array($clean, ['vehicle_brand', 'car_brand', 'vehicle_make', 'make'])) {
                 $columnMap['vehicle_brand'] = $index;
             } elseif (in_array($clean, ['vehicle_model', 'car_model', 'model'])) {
@@ -492,6 +503,10 @@ class ProductController extends Controller
                 ? trim((string) $row[$columnMap['unit']])
                 : 'pc';
 
+            $shelfLocation = isset($columnMap['shelf_location'])
+                ? trim((string) ($row[$columnMap['shelf_location']] ?? ''))
+                : '';
+
             $compatible = isset($columnMap['compatible_models'])
                 ? trim((string) ($row[$columnMap['compatible_models']] ?? ''))
                 : null;
@@ -514,6 +529,7 @@ class ProductController extends Controller
                     'category_id' => $categoryId ?? $product->category_id,
                     'brand_id' => $brandId ?? $product->brand_id,
                     'store_id' => $storeId ?? $product->store_id,
+                    'shelf_location' => $shelfLocation !== '' ? $shelfLocation : $product->shelf_location,
                     'vehicle_brand_id' => $vehicleBrandId ?? $product->vehicle_brand_id,
                     'vehicle_model_id' => $vehicleModelId ?? $product->vehicle_model_id,
                     'compatible_models' => $compatible ?? $product->compatible_models,
@@ -548,6 +564,7 @@ class ProductController extends Controller
                     'category_id' => $categoryId,
                     'brand_id' => $brandId,
                     'store_id' => $storeId,
+                    'shelf_location' => $shelfLocation !== '' ? $shelfLocation : null,
                     'vehicle_brand_id' => $vehicleBrandId,
                     'vehicle_model_id' => $vehicleModelId,
                     'compatible_models' => $compatible,

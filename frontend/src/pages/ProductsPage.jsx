@@ -25,6 +25,7 @@ const emptyForm = {
   category_id: '',
   brand_id: '',
   store_id: '',
+  shelf_location: '',
   vehicle_brand_id: '',
   vehicle_model_id: '',
   compatible_models: '',
@@ -130,6 +131,7 @@ export function ProductsPage() {
       category_id: product.category_id ?? '',
       brand_id: product.brand_id ?? '',
       store_id: product.store_id ?? '',
+      shelf_location: product.shelf_location ?? '',
       vehicle_brand_id: product.vehicle_brand_id ?? '',
       vehicle_model_id: product.vehicle_model_id ?? '',
       compatible_models: product.compatible_models ?? '',
@@ -408,6 +410,9 @@ export function ProductsPage() {
                     ) : (
                       <span className="text-[var(--muted)] text-xs italic">—</span>
                     )}
+                    {p.shelf_location && (
+                      <div className="mt-1 text-[11px] font-medium text-[var(--muted)]">{p.shelf_location}</div>
+                    )}
                   </td>
                   <td className="px-4 py-3.5 text-xs">
                     {(p.vehicle_brand || p.vehicle_model) ? (
@@ -504,7 +509,6 @@ export function ProductsPage() {
               label="Store Location"
               value={form.store_id}
               onChange={(e) => setForm({ ...form, store_id: e.target.value })}
-              className="col-span-1 sm:col-span-2"
             >
               <option value="">— Primary Store Location (Optional) —</option>
               {stores.map((s) => (
@@ -513,6 +517,13 @@ export function ProductsPage() {
                 </option>
               ))}
             </Select>
+
+            <Input
+              label="Rack / Shelf Location"
+              placeholder="e.g. Rack A3, Bin 12"
+              value={form.shelf_location}
+              onChange={(e) => setForm({ ...form, shelf_location: e.target.value })}
+            />
 
             <Select
               label={
@@ -554,7 +565,7 @@ export function ProductsPage() {
             <Input
               label="Compatible Models / Notes"
               placeholder="e.g. 2018-2023, KSP130, NZE141"
-              className="col-span-1 sm:col-span-2"
+              className="col-span-2"
               value={form.compatible_models}
               onChange={(e) => setForm({ ...form, compatible_models: e.target.value })}
             />

@@ -203,9 +203,15 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
                   {product.part_no && <> • Part No: <strong className="font-mono text-[var(--ink)]">{product.part_no}</strong></>}
                   {product.brand && ` • Brand: ${product.brand.name}`}
                 </span>
-                {product.store_stock?.length > 0 && (
+                {(product.store_stock?.length > 0 || product.shelf_location) && (
                   <span className="mt-1 flex flex-wrap gap-1">
-                    {product.store_stock.map((st) => (
+                    {product.shelf_location && !product.store_stock?.some((st) => st.store_id === product.store_id) && (
+                      <span className="inline-flex items-center gap-1 rounded border border-[var(--line)] bg-[var(--paper)] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[var(--muted)]">
+                        <MapPin className="h-3 w-3" />
+                        {product.store?.code ? `${product.store.code} · ` : ''}{product.shelf_location}
+                      </span>
+                    )}
+                    {product.store_stock?.map((st) => (
                       <span
                         key={st.store_id}
                         title={st.name}
@@ -217,6 +223,7 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
                       >
                         <MapPin className="h-3 w-3" />
                         {st.code ?? st.name}: {st.quantity}
+                        {st.store_id === product.store_id && product.shelf_location && ` · ${product.shelf_location}`}
                       </span>
                     ))}
                   </span>
@@ -549,6 +556,14 @@ export function InvoiceCreatePage() {
                       <span className="font-bold text-[var(--accent)] uppercase tracking-wider">Item #{index + 1}</span>
                       {product && (
                         <div className="flex items-center gap-3">
+                          {(product.store || product.shelf_location) && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3 text-[var(--accent)]" />
+                              <strong className="text-[var(--ink)]">
+                                {[product.store?.code, product.shelf_location].filter(Boolean).join(' · ')}
+                              </strong>
+                            </span>
+                          )}
                           {product.brand && <span>Brand: <strong className="text-[var(--ink)]">{product.brand.name}</strong></span>}
                           {isOverStock ? (
                             <span className="flex items-center gap-1 font-bold text-[var(--critical)] bg-[var(--critical-soft)] px-2.5 py-0.5 rounded-full">
