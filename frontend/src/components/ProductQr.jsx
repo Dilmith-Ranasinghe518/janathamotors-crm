@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { QRCodeSVG } from 'qrcode.react'
 import { Download, Printer } from 'lucide-react'
 import { Button, Modal } from './ui'
@@ -85,4 +86,53 @@ export function ProductQrModal({ product, onClose }) {
       </div>
     </Modal>
   )
+}
+
+const SHEET_COLS = 7
+const SHEET_ROWS = 9
+
+function escapeSheetHtml(text) {
+  return String(text ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+}
+
+/**
+ * Opens a print-ready A4 sheet packing SHEET_COLS × SHEET_ROWS QR labels per page
+ * (Item No + store / shelf location). Use the browser's "Save as PDF" to export.
+ * `win` must be opened synchronously in the click handler, or pop-up blockers stop it.
+ */
+export function printQrSheet(products, win) {
+  const perPage = SHEET_COLS * SHEET_ROWS
+  const pages = []
+  for (let i = 0; i < products.length; i += perPage) pages.push(products.slice(i, i + perPage))
+
+  const pagesHtml = pages
+    .map(
+      (page) => `<section class="page">${page
+        .map((p) => {
+          const svg = renderToStaticMarkup(<QRCodeSVG value={p.item_no} size={256} level="M" marginSize={0} />)
+          const location = [p.store?.code, p.shelf_location].filter(Boolean).join(' · ')
+          return `<div class="cell">${svg}<div class="no">${escapeSheetHtml(p.item_no)}</div><div class="loc">${escapeSheetHtml(location || '—')}</div></div>`
+        })
+        .join('')}</section>`
+    )
+    .join('')
+
+  win.document.open()
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>QR Labels (${products.length})</title>
+    <style>
+      @page { size: A4; margin: 6mm; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Arial, sans-serif; }
+      .page { display: grid; grid-template-columns: repeat(${SHEET_COLS}, 1fr); grid-auto-rows: ${Math.floor(2850 / SHEET_ROWS) / 10}mm;
+              width: 198mm; break-after: page; page-break-after: always; }
+      .page:last-child { break-after: auto; page-break-after: auto; }
+      .cell { border: 0.2mm dashed #bbb; padding: 1.2mm; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+      .cell svg { width: 21mm; height: 21mm; }
+      .no { font-family: monospace; font-weight: bold; font-size: 7pt; margin-top: 0.8mm; text-align: center; word-break: break-all; line-height: 1.1; }
+      .loc { font-size: 6pt; color: #333; text-align: center; line-height: 1.1; word-break: break-word; }
+      @media screen { body { background: #eee; } .page { background: #fff; margin: 8mm auto; padding: 6mm; width: 210mm; box-shadow: 0 1px 4px rgba(0,0,0,.2); } }
+    </style></head><body>${pagesHtml}
+    <script>window.onload = () => window.print()</script>
+    </body></html>`)
+  win.document.close()
 }

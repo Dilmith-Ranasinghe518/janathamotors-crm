@@ -41,7 +41,7 @@ class ProductController extends Controller
                 '(select coalesce(sum(quantity), 0) from stock_ledger where stock_ledger.product_id = products.id) <= products.reorder_level'
             ))
             ->orderBy('name')
-            ->paginate(100);
+            ->paginate(min(max($request->integer('per_page', 100), 1), 1000));
 
         $this->attachStoreStock($products->getCollection());
 

@@ -11,11 +11,12 @@ import {
   CheckCircle2,
   AlertCircle,
   FileText,
+  QrCode,
 } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
-import { ProductQrModal, ProductQrThumb } from '../components/ProductQr'
+import { ProductQrModal, ProductQrThumb, printQrSheet } from '../components/ProductQr'
 
 const emptyForm = {
   item_no: '',
@@ -53,6 +54,7 @@ export function ProductsPage() {
 
   // Import & Export states
   const [isExporting, setIsExporting] = useState(false)
+  const [isPrintingQr, setIsPrintingQr] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importFile, setImportFile] = useState(null)
   const [updateExisting, setUpdateExisting] = useState(true)
@@ -169,6 +171,49 @@ export function ProductsPage() {
     })
   }
 
+  // Prints QR labels for every product matching the current filters, across all result pages.
+  async function handlePrintQrSheet() {
+    const win = window.open('', '_blank')
+    if (!win) {
+      alert('Please allow pop-ups for this site to print the QR sheet.')
+      return
+    }
+    win.document.write('<p style="font-family:sans-serif;padding:24px">Preparing QR labels…</p>')
+    try {
+      setIsPrintingQr(true)
+      const all = []
+      let page = 1
+      let lastPage = 1
+      do {
+        const { data } = await api.get('/products', {
+          params: {
+            page,
+            per_page: 1000,
+            search: search || undefined,
+            store_id: selectedStoreId || undefined,
+            category_id: selectedCategoryId || undefined,
+            low_stock: lowStockOnly || undefined,
+          },
+        })
+        all.push(...data.data)
+        lastPage = data.last_page
+        page++
+      } while (page <= lastPage)
+
+      if (all.length === 0) {
+        win.close()
+        alert('No products match the current filters.')
+        return
+      }
+      printQrSheet(all, win)
+    } catch (err) {
+      win.close()
+      alert(apiErrorMessage(err, 'Could not load products for the QR sheet.'))
+    } finally {
+      setIsPrintingQr(false)
+    }
+  }
+
   async function handleExport() {
     try {
       setIsExporting(true)
@@ -266,6 +311,17 @@ export function ProductsPage() {
         actions={
           can('manage_products') && (
             <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="secondary"
+                onClick={handlePrintQrSheet}
+                disabled={isPrintingQr}
+                className="flex items-center gap-1.5"
+                title="Print QR labels for all listed products (63 per A4 page)"
+              >
+                <QrCode className="h-4 w-4" />
+                <span>{isPrintingQr ? 'Preparing…' : 'QR Sheet'}</span>
+              </Button>
+
               <Button
                 variant="secondary"
                 onClick={handleExport}

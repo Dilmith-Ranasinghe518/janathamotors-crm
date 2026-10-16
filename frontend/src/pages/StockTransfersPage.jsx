@@ -4,6 +4,7 @@ import { ArrowRight, ArrowLeftRight, Plus, Search, Eye, Trash2, Calendar, MapPin
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
+import { QrScanBar } from '../components/QrScanner'
 
 const blankLine = { product_id: '', quantity: 1, notes: '' }
 
@@ -24,6 +25,7 @@ export function StockTransfersPage() {
   const [notes, setNotes] = useState('')
   const [lines, setLines] = useState([{ ...blankLine }])
   const [error, setError] = useState('')
+  const [scanMessage, setScanMessage] = useState(null)
 
   const storesQuery = useQuery({
     queryKey: ['stores', 'all'],
@@ -32,7 +34,7 @@ export function StockTransfersPage() {
 
   const productsQuery = useQuery({
     queryKey: ['products', 'all'],
-    queryFn: () => api.get('/products', { params: { per_page: 200 } }).then((r) => r.data),
+    queryFn: () => api.get('/products', { params: { per_page: 1000 } }).then((r) => r.data),
   })
 
   const transfersQuery = useQuery({
@@ -70,6 +72,7 @@ export function StockTransfersPage() {
     setNotes('')
     setLines([{ ...blankLine }])
     setError('')
+    setScanMessage(null)
     setModalOpen(true)
   }
 
@@ -84,6 +87,32 @@ export function StockTransfersPage() {
 
   function updateLine(index, patch) {
     setLines((prev) => prev.map((l, i) => (i === index ? { ...l, ...patch } : l)))
+  }
+
+  // A scan adds the product as a line, or bumps the quantity if it is already listed.
+  function handleScan(code) {
+    const needle = code.trim().toLowerCase()
+    const product =
+      products.find((p) => p.item_no?.toLowerCase() === needle) ||
+      products.find((p) => p.part_no?.toLowerCase() === needle || p.item_code?.toLowerCase() === needle)
+
+    if (!product) {
+      setScanMessage({ ok: false, text: `No product found for "${code}".` })
+      return
+    }
+
+    const existing = lines.findIndex((l) => String(l.product_id) === String(product.id))
+    const empty = lines.findIndex((l) => !l.product_id)
+    const newQty = existing !== -1 ? Number(lines[existing].quantity || 0) + 1 : 1
+
+    if (existing !== -1) {
+      setLines(lines.map((l, i) => (i === existing ? { ...l, quantity: newQty } : l)))
+    } else if (empty !== -1) {
+      setLines(lines.map((l, i) => (i === empty ? { ...l, product_id: String(product.id), quantity: 1 } : l)))
+    } else {
+      setLines([...lines, { ...blankLine, product_id: String(product.id) }])
+    }
+    setScanMessage({ ok: true, text: `✓ ${product.item_no} — ${product.name} (qty ${newQty})` })
   }
 
   function removeLine(index) {
@@ -318,6 +347,8 @@ export function StockTransfersPage() {
                   + Add Line
                 </Button>
               </div>
+
+              <QrScanBar onScan={handleScan} message={scanMessage} />
 
               {lines.map((line, idx) => (
                 <div key={idx} className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">
