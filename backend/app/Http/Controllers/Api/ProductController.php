@@ -42,7 +42,38 @@ class ProductController extends Controller
             ->orderBy('name')
             ->paginate(100);
 
+        $this->attachStoreStock($products->getCollection());
+
         return $products;
+    }
+
+    /**
+     * Attach a per-store stock breakdown (stores holding non-zero stock) to each product.
+     */
+    private function attachStoreStock($products): void
+    {
+        $rows = StockLedger::query()
+            ->whereIn('product_id', $products->pluck('id'))
+            ->whereNotNull('store_id')
+            ->groupBy('product_id', 'store_id')
+            ->havingRaw('SUM(quantity) <> 0')
+            ->selectRaw('product_id, store_id, SUM(quantity) as quantity')
+            ->get()
+            ->groupBy('product_id');
+
+        $stores = Store::whereIn('id', $rows->flatten()->pluck('store_id')->unique())->get()->keyBy('id');
+
+        foreach ($products as $product) {
+            $product->setAttribute('store_stock', ($rows[$product->id] ?? collect())
+                ->map(fn ($r) => [
+                    'store_id' => $r->store_id,
+                    'code' => $stores[$r->store_id]?->code,
+                    'name' => $stores[$r->store_id]?->name,
+                    'quantity' => (int) $r->quantity,
+                ])
+                ->sortByDesc('quantity')
+                ->values());
+        }
     }
 
     public function store(Request $request)

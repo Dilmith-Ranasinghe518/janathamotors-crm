@@ -15,6 +15,7 @@ import {
   X,
   Save,
   AlertTriangle,
+  MapPin,
 } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, PageHeader } from '../components/ui'
@@ -202,6 +203,24 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
                   {product.part_no && <> • Part No: <strong className="font-mono text-[var(--ink)]">{product.part_no}</strong></>}
                   {product.brand && ` • Brand: ${product.brand.name}`}
                 </span>
+                {product.store_stock?.length > 0 && (
+                  <span className="mt-1 flex flex-wrap gap-1">
+                    {product.store_stock.map((st) => (
+                      <span
+                        key={st.store_id}
+                        title={st.name}
+                        className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold ${
+                          st.quantity > 0
+                            ? 'border-[var(--line)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                            : 'border-[var(--critical-soft)] bg-[var(--critical-soft)] text-[var(--critical)]'
+                        }`}
+                      >
+                        <MapPin className="h-3 w-3" />
+                        {st.code ?? st.name}: {st.quantity}
+                      </span>
+                    ))}
+                  </span>
+                )}
               </div>
               <div className="flex flex-col items-end">
                 <span className="font-mono font-bold text-[var(--accent)]">
