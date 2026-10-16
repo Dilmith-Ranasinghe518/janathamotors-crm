@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, ArrowLeftRight, Plus, Search, Eye, Trash2, Calendar, MapPin, Store, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, ArrowLeftRight, Plus, ScanLine, Search, Eye, Trash2, Calendar, MapPin, Store, CheckCircle2 } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -26,6 +26,7 @@ export function StockTransfersPage() {
   const [lines, setLines] = useState([{ ...blankLine }])
   const [error, setError] = useState('')
   const [scanMessage, setScanMessage] = useState(null)
+  const [startWithCamera, setStartWithCamera] = useState(false)
 
   const storesQuery = useQuery({
     queryKey: ['stores', 'all'],
@@ -65,7 +66,8 @@ export function StockTransfersPage() {
     onError: (err) => setError(apiErrorMessage(err, 'Could not execute stock transfer.')),
   })
 
-  function openCreateModal() {
+  function openCreateModal(withCamera = false) {
+    setStartWithCamera(withCamera)
     setFromStoreId('')
     setToStoreId('')
     setTransferDate(new Date().toISOString().slice(0, 10))
@@ -167,10 +169,16 @@ export function StockTransfersPage() {
         description="Transfer inventory items between store locations and view transfer audit history."
         actions={
           can('manage_stock') && (
-            <Button onClick={openCreateModal} className="flex items-center gap-1.5 shadow-sm">
-              <Plus className="h-4 w-4" />
-              <span>New Stock Transfer</span>
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary" onClick={() => openCreateModal(true)} className="flex items-center gap-1.5">
+                <ScanLine className="h-4 w-4" />
+                <span>Scan QR</span>
+              </Button>
+              <Button onClick={() => openCreateModal()} className="flex items-center gap-1.5 shadow-sm">
+                <Plus className="h-4 w-4" />
+                <span>New Stock Transfer</span>
+              </Button>
+            </div>
           )
         }
       />
@@ -348,7 +356,7 @@ export function StockTransfersPage() {
                 </Button>
               </div>
 
-              <QrScanBar onScan={handleScan} message={scanMessage} />
+              <QrScanBar onScan={handleScan} message={scanMessage} startWithCamera={startWithCamera} />
 
               {lines.map((line, idx) => (
                 <div key={idx} className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3">

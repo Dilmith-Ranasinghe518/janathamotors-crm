@@ -7,9 +7,9 @@ import { Button } from './ui'
  * Scan input for QR codes: works with USB/Bluetooth scanners (they type the code + Enter)
  * and with the device camera. Calls onScan(code) for every scan.
  */
-export function QrScanBar({ onScan, message }) {
+export function QrScanBar({ onScan, message, startWithCamera = false }) {
   const [code, setCode] = useState('')
-  const [cameraOn, setCameraOn] = useState(false)
+  const [cameraOn, setCameraOn] = useState(startWithCamera)
 
   function submitCode(e) {
     e.preventDefault()
