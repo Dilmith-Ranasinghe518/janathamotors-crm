@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   User,
@@ -20,6 +20,7 @@ import {
 import { api, apiErrorMessage } from '../lib/api'
 import { codeFromQr } from '../lib/qr'
 import { Button, Card, PageHeader } from '../components/ui'
+import { CustomerSelect } from '../components/CustomerSelect'
 
 const blankLine = { product_id: '', product_name: '', product_data: null, quantity: 1, unit_price: '', discount: 0 }
 
@@ -262,6 +263,7 @@ export function InvoiceCreatePage() {
   const navigate = useNavigate()
   const { id } = useParams()
   const isEdit = Boolean(id)
+  const [searchParams] = useSearchParams()
 
   const [customerId, setCustomerId] = useState('')
   const [customerName, setCustomerName] = useState('')
@@ -289,6 +291,11 @@ export function InvoiceCreatePage() {
     queryFn: () => api.get(`/invoices/${id}`).then((r) => r.data),
     enabled: isEdit,
   })
+
+  // Credit bills: a registered customer is mandatory (picked from the select dropdown).
+  const isCredit = isEdit ? Boolean(existingInvoiceQuery.data?.is_credit) : searchParams.get('type') === 'credit'
+  const selectedCustomer = customerId ? { id: customerId, name: customerName, phone: customerPhone } : null
+  const billLabel = isCredit ? 'Credit Bill' : 'Invoice'
 
   const products = productsQuery.data?.data ?? []
   const customers = customersQuery.data?.data ?? []
@@ -421,6 +428,11 @@ export function InvoiceCreatePage() {
       return
     }
 
+    if (isCredit && !customerId) {
+      setError('Please select a customer for this credit bill.')
+      return
+    }
+
     saveMutation.mutate({
       customer_id: customerId || null,
       customer_name: customerName || null,
@@ -431,6 +443,7 @@ export function InvoiceCreatePage() {
       discount: Number(discount) || 0,
       tax: Number(tax) || 0,
       paid_amount: Number(paidAmount) || 0,
+      is_credit: isCredit,
       items,
     })
   }
@@ -438,11 +451,13 @@ export function InvoiceCreatePage() {
   return (
     <div className="max-w-7xl mx-auto pb-12">
       <PageHeader
-        title={isEdit ? `Edit Invoice #${existingInvoiceQuery.data?.invoice_no || ''}` : 'New Sales Invoice'}
+        title={isEdit ? `Edit ${billLabel} #${existingInvoiceQuery.data?.invoice_no || ''}` : isCredit ? 'New Credit Bill' : 'New Sales Invoice'}
         description={
           isEdit
-            ? 'Update customer details, vehicle information, or item quantities for this invoice.'
-            : 'Create a new spare parts invoice with instant product lookup & vehicle details.'
+            ? `Update customer details, vehicle information, or item quantities for this ${billLabel.toLowerCase()}.`
+            : isCredit
+              ? 'Sell on credit to a registered customer. The unpaid balance is added to their account.'
+              : 'Create a new spare parts invoice with instant product lookup & vehicle details.'
         }
       />
 
@@ -456,20 +471,39 @@ export function InvoiceCreatePage() {
                 <FileText className="h-5 w-5 text-[var(--accent)]" />
                 <span>Customer & Vehicle Details</span>
               </h2>
-              <span className="text-xs text-[var(--muted)]">Optional for walk-in sales</span>
+              <span className={`text-xs ${isCredit ? 'font-semibold text-[var(--critical)]' : 'text-[var(--muted)]'}`}>
+                {isCredit ? 'Customer is required for credit bills' : 'Optional for walk-in sales'}
+              </span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-6">
-                <CustomerSearchInput
-                  customers={customers}
-                  customerName={customerName}
-                  onSelectCustomer={handleSelectCustomer}
-                  onNameChange={(name) => {
-                    setCustomerId('')
-                    setCustomerName(name)
-                  }}
-                />
+                {isCredit ? (
+                  <CustomerSelect
+                    required
+                    value={selectedCustomer}
+                    invalid={Boolean(error) && !customerId}
+                    onChange={(customer) => {
+                      if (customer) {
+                        handleSelectCustomer(customer)
+                      } else {
+                        setCustomerId('')
+                        setCustomerName('')
+                        setCustomerPhone('')
+                      }
+                    }}
+                  />
+                ) : (
+                  <CustomerSearchInput
+                    customers={customers}
+                    customerName={customerName}
+                    onSelectCustomer={handleSelectCustomer}
+                    onNameChange={(name) => {
+                      setCustomerId('')
+                      setCustomerName(name)
+                    }}
+                  />
+                )}
               </div>
 
               <div className="md:col-span-6">

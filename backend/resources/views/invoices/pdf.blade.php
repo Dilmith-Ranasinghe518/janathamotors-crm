@@ -72,7 +72,7 @@
                 </div>
             </td>
             <td style="width: 42%;">
-                <p class="inv-title">INVOICE</p>
+                <p class="inv-title">{{ $invoice->is_credit ? 'CREDIT BILL' : 'INVOICE' }}</p>
                 <div class="inv-details">
                     <div><strong>Invoice No:</strong> #{{ $invoice->invoice_no }}</div>
                     <div><strong>Date:</strong> {{ $invoice->created_at->format('Y-m-d') }}</div>

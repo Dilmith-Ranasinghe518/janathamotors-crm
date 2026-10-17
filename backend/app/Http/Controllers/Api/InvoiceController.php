@@ -28,7 +28,9 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'customer_id' => ['nullable', 'exists:customers,id'],
+            'is_credit' => ['boolean'],
+            // Credit bills must be raised against a registered customer.
+            'customer_id' => ['nullable', 'required_if_accepted:is_credit', 'exists:customers,id'],
             'store_id' => ['nullable', 'exists:stores,id'],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
@@ -43,6 +45,9 @@ class InvoiceController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
+        ], [
+            'customer_id.required' => 'Please select a customer for this credit bill.',
+            'customer_id.required_if_accepted' => 'Please select a customer for this credit bill.',
         ]);
 
         $invoice = DB::transaction(function () use ($data, $request) {
@@ -111,6 +116,7 @@ class InvoiceController extends Controller
                 'paid_amount' => $paidAmount,
                 'due_amount' => $dueAmount,
                 'status' => $dueAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'due'),
+                'is_credit' => $data['is_credit'] ?? false,
                 'created_by' => $request->user()->id,
             ]);
 
@@ -164,7 +170,7 @@ class InvoiceController extends Controller
         }
 
         $data = $request->validate([
-            'customer_id' => ['nullable', 'exists:customers,id'],
+            'customer_id' => [$invoice->is_credit ? 'required' : 'nullable', 'exists:customers,id'],
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
             'vehicle_no' => ['nullable', 'string', 'max:100'],
@@ -178,6 +184,9 @@ class InvoiceController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
+        ], [
+            'customer_id.required' => 'Please select a customer for this credit bill.',
+            'customer_id.required_if_accepted' => 'Please select a customer for this credit bill.',
         ]);
 
         $updatedInvoice = DB::transaction(function () use ($data, $invoice, $request) {

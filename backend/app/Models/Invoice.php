@@ -11,13 +11,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'invoice_no', 'customer_id', 'store_id', 'customer_name', 'customer_phone',
     'vehicle_no', 'vehicle_model', 'vehicle_year',
     'subtotal', 'discount', 'tax', 'total',
-    'paid_amount', 'due_amount', 'status', 'created_by',
+    'paid_amount', 'due_amount', 'status', 'is_credit', 'created_by',
 ])]
 class Invoice extends Model
 {
     protected function casts(): array
     {
         return [
+            'is_credit' => 'boolean',
             'subtotal' => 'decimal:2',
             'discount' => 'decimal:2',
             'tax' => 'decimal:2',

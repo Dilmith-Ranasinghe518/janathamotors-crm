@@ -54,7 +54,7 @@ export function InvoiceDetailPage() {
   return (
     <div>
       <PageHeader
-        title={invoice.invoice_no}
+        title={invoice.is_credit ? `${invoice.invoice_no} · Credit Bill` : invoice.invoice_no}
         description={`Created ${new Date(invoice.created_at).toLocaleString()}`}
         actions={
           <>

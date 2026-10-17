@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Eye, FileDown, Pencil, Trash2, Plus } from 'lucide-react'
+import { Eye, FileDown, Pencil, Trash2, Plus, CreditCard } from 'lucide-react'
 import { api } from '../lib/api'
 import { Card, EmptyState, PageHeader, Select, StatusBadge } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -51,13 +51,22 @@ export function InvoicesPage() {
         description="Create sales, track payments and dues."
         actions={
           can('create_invoice') && (
-            <Link
-              to="/invoices/new"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 transition shadow-md"
-            >
-              <Plus className="h-4 w-4" />
-              <span>New Sales Invoice</span>
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/invoices/new?type=credit"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--accent)] px-4 py-2.5 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] transition"
+              >
+                <CreditCard className="h-4 w-4" />
+                <span>Create Credit Bill</span>
+              </Link>
+              <Link
+                to="/invoices/new"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-sm font-bold text-white hover:opacity-90 transition shadow-md"
+              >
+                <Plus className="h-4 w-4" />
+                <span>New Sales Invoice</span>
+              </Link>
+            </div>
           )
         }
       />
@@ -97,6 +106,11 @@ export function InvoicesPage() {
                     <span className="inline-block rounded-lg border border-[var(--line)] bg-[var(--paper)] px-2.5 py-1 font-mono text-xs font-extrabold text-[var(--ink)] shadow-2xs">
                       {inv.invoice_no}
                     </span>
+                    {inv.is_credit && (
+                      <span className="mt-1 block w-fit rounded-full bg-[var(--warning-soft)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--warning)]">
+                        Credit
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 font-semibold text-[var(--ink)]">
                     {inv.customer_name || inv.customer?.name || 'Walk-in Customer'}
