@@ -22,13 +22,13 @@
 
     .band { position: absolute; top: -22px; right: -26px; }
     .band img { width: 150px; height: 34px; }
-    .head { width: 100%; margin: 6px 0 2px; }
-    .head td { vertical-align: middle; }
-    .logo-cell { width: 78px; padding-right: 8px; }
-    .logo { max-height: 64px; max-width: 76px; }
-    .co-name { font-size: 22px; font-weight: bold; color: #1f2a5a; margin: 0 0 3px; letter-spacing: -0.2px; }
+    .head { margin: 4px 0 6px; }  /* shrink-to-fit: the name sets the width the lines align to */
+    .logo-cell { width: 64px; vertical-align: middle; padding-right: 8px; }
+    .logo { max-height: 56px; max-width: 62px; }
+    .name-cell { vertical-align: middle; }
+    .co-name { font-size: 29px; font-weight: bold; color: #1f2a5a; margin: 0; letter-spacing: -0.2px; white-space: nowrap; }
+    .info-cell { text-align: right; padding-top: 1px; }
     .co-line { font-size: 9.5px; color: #1f2937; margin-top: 2px; font-weight: bold; }
-    .co-line strong { color: #1f2a5a; }
     .ico { width: 9px; height: 9px; margin-right: 3px; vertical-align: -1px; }
     .co-tag { font-size: 10.5px; font-weight: bold; color: #c2410c; margin-top: 3px; }
 
@@ -76,26 +76,35 @@
     {{-- Business header (logo · name · icon contact lines · tagline · slanted accent band) --}}
     <div class="band"><img src="{{ $icons['band'] }}" alt=""></div>
     <table class="head">
+        {{-- Row 1: logo beside the company name --}}
         <tr>
             @if($logoDataUri)
                 <td class="logo-cell"><img src="{{ $logoDataUri }}" class="logo" alt="{{ $company['name'] }}"></td>
             @endif
-            <td>
-                <p class="co-name">{{ strtoupper($company['legal_name']) }}</p>
+            <td class="name-cell"><p class="co-name">{{ strtoupper($company['legal_name']) }}</p></td>
+        </tr>
+        {{-- Rows below: contact lines right-aligned under the name --}}
+        <tr>
+            @if($logoDataUri)<td></td>@endif
+            <td class="info-cell">
+                @if($company['address'])
+                    <div class="co-line"><img src="{{ $icons['pin'] }}" class="ico">{{ $company['address'] }}</div>
+                @endif
                 <div class="co-line">
-                    @if($company['address'])<img src="{{ $icons['pin'] }}" class="ico">{{ $company['address'] }} &nbsp;&nbsp;@endif
-                    @if($company['phone'])<img src="{{ $icons['phone'] }}" class="ico">{{ $company['phone'] }}@endif
-                </div>
-                <div class="co-line">
+                    @if($company['phone'])<img src="{{ $icons['phone'] }}" class="ico">{{ $company['phone'] }} &nbsp;&nbsp;@endif
                     @if($company['whatsapp'])<img src="{{ $icons['chat'] }}" class="ico">{{ $company['whatsapp'] }} &nbsp;&nbsp;@endif
-                    @if($company['email'])<img src="{{ $icons['mail'] }}" class="ico">{{ $company['email'] }} &nbsp;&nbsp;@endif
-                    @if($company['website'])<img src="{{ $icons['web'] }}" class="ico">{{ $company['website'] }} &nbsp;&nbsp;@endif
-                    @if($company['branches'])<strong>Branches:</strong> {{ $company['branches'] }}@endif
+                    @if($company['email'])<img src="{{ $icons['mail'] }}" class="ico">{{ $company['email'] }}@endif
                 </div>
+                @if($company['website'] || $company['branches'])
+                    <div class="co-line">
+                        @if($company['website'])<img src="{{ $icons['web'] }}" class="ico">{{ $company['website'] }} &nbsp;&nbsp;@endif
+                        @if($company['branches'])Branches: {{ $company['branches'] }}@endif
+                    </div>
+                @endif
                 @if(($isVat && $company['vat_reg_no']) || $company['business_reg_no'])
                     <div class="co-line">
-                        @if($isVat && $company['vat_reg_no'])<strong>VAT Reg. No:</strong> {{ $company['vat_reg_no'] }} &nbsp;&nbsp; @endif
-                        @if($company['business_reg_no'])<strong>Business Reg. No:</strong> {{ $company['business_reg_no'] }}@endif
+                        @if($isVat && $company['vat_reg_no'])VAT Reg. No: {{ $company['vat_reg_no'] }} &nbsp;&nbsp; @endif
+                        @if($company['business_reg_no'])Business Reg. No: {{ $company['business_reg_no'] }}@endif
                     </div>
                 @endif
                 @if($company['tagline'])<div class="co-tag">{{ $company['tagline'] }}</div>@endif
