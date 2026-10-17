@@ -20,13 +20,17 @@
     body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #1f2937; line-height: 1.35; }
     table { border-collapse: collapse; }
 
-    .head { width: 100%; margin-bottom: 4px; }
+    .band { position: absolute; top: -22px; right: -26px; }
+    .band img { width: 150px; height: 34px; }
+    .head { width: 100%; margin: 6px 0 2px; }
     .head td { vertical-align: middle; }
-    .logo { max-height: 56px; width: auto; }
-    .co-name { font-size: 19px; font-weight: bold; color: #1f2a5a; margin: 0; letter-spacing: -0.3px; }
-    .co-line { font-size: 9px; color: #374151; margin-top: 2px; }
-    .co-tag { font-size: 9.5px; font-weight: bold; color: #b4532a; margin-top: 3px; }
-    .accent-bar { height: 4px; background: #b4532a; margin: 6px 0 4px; }
+    .logo-cell { width: 78px; padding-right: 8px; }
+    .logo { max-height: 64px; max-width: 76px; }
+    .co-name { font-size: 22px; font-weight: bold; color: #1f2a5a; margin: 0 0 3px; letter-spacing: -0.2px; }
+    .co-line { font-size: 9.5px; color: #1f2937; margin-top: 2px; font-weight: bold; }
+    .co-line strong { color: #1f2a5a; }
+    .ico { width: 9px; height: 9px; margin-right: 3px; vertical-align: -1px; }
+    .co-tag { font-size: 10.5px; font-weight: bold; color: #c2410c; margin-top: 3px; }
 
     .title { text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; color: #111827; margin: 6px 0 8px; }
     .status { text-align: center; margin: -4px 0 8px; font-size: 8.5px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -69,22 +73,25 @@
 </style>
 </head>
 <body>
-    {{-- Business header --}}
+    {{-- Business header (logo · name · icon contact lines · tagline · slanted accent band) --}}
+    <div class="band"><img src="{{ $icons['band'] }}" alt=""></div>
     <table class="head">
         <tr>
             @if($logoDataUri)
-                <td style="width: 70px;"><img src="{{ $logoDataUri }}" class="logo" alt="{{ $company['name'] }}"></td>
+                <td class="logo-cell"><img src="{{ $logoDataUri }}" class="logo" alt="{{ $company['name'] }}"></td>
             @endif
             <td>
                 <p class="co-name">{{ strtoupper($company['legal_name']) }}</p>
-                @if($company['address'])<div class="co-line">{{ $company['address'] }}</div>@endif
                 <div class="co-line">
-                    @if($company['phone'])Tel: {{ $company['phone'] }}@endif
-                    @if($company['whatsapp']) &nbsp;|&nbsp; WhatsApp: {{ $company['whatsapp'] }}@endif
-                    @if($company['email']) &nbsp;|&nbsp; {{ $company['email'] }}@endif
-                    @if($company['website']) &nbsp;|&nbsp; {{ $company['website'] }}@endif
+                    @if($company['address'])<img src="{{ $icons['pin'] }}" class="ico">{{ $company['address'] }} &nbsp;&nbsp;@endif
+                    @if($company['phone'])<img src="{{ $icons['phone'] }}" class="ico">{{ $company['phone'] }}@endif
                 </div>
-                @if($company['branches'])<div class="co-line">Branches: {{ $company['branches'] }}</div>@endif
+                <div class="co-line">
+                    @if($company['whatsapp'])<img src="{{ $icons['chat'] }}" class="ico">{{ $company['whatsapp'] }} &nbsp;&nbsp;@endif
+                    @if($company['email'])<img src="{{ $icons['mail'] }}" class="ico">{{ $company['email'] }} &nbsp;&nbsp;@endif
+                    @if($company['website'])<img src="{{ $icons['web'] }}" class="ico">{{ $company['website'] }} &nbsp;&nbsp;@endif
+                    @if($company['branches'])<strong>Branches:</strong> {{ $company['branches'] }}@endif
+                </div>
                 @if(($isVat && $company['vat_reg_no']) || $company['business_reg_no'])
                     <div class="co-line">
                         @if($isVat && $company['vat_reg_no'])<strong>VAT Reg. No:</strong> {{ $company['vat_reg_no'] }} &nbsp;&nbsp; @endif
@@ -95,7 +102,6 @@
             </td>
         </tr>
     </table>
-    <div class="accent-bar"></div>
 
     <div class="title">{{ $title }}</div>
     @unless($isVat)

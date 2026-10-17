@@ -389,12 +389,33 @@ class InvoiceController extends Controller
             'company' => $this->companyDetails(),
             'vat' => $this->vatBreakdown($invoice),
             'paymentMode' => $invoice->payment_mode ? ucwords(str_replace('_', ' ', $invoice->payment_mode)) : null,
+            'icons' => $this->billIcons(),
             'logoDataUri' => file_exists($logoPath)
                 ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath))
                 : null,
         ]);
 
         return $pdf->download($isVat ? "{$invoice->invoice_no}-tax-invoice.pdf" : "{$invoice->invoice_no}.pdf");
+    }
+
+    /**
+     * Small SVG icons and the slanted header band, as data URIs (the PDF renderer has no icon font).
+     */
+    private function billIcons(): array
+    {
+        $navy = '#1f2a5a';
+        $svg = fn (string $body, string $viewBox = '0 0 24 24') => 'data:image/svg+xml;base64,'.base64_encode(
+            "<svg xmlns='http://www.w3.org/2000/svg' viewBox='{$viewBox}'>{$body}</svg>"
+        );
+
+        return [
+            'pin' => $svg("<path fill='{$navy}' d='M12 1a8 8 0 0 0-8 8c0 6 8 14 8 14s8-8 8-14a8 8 0 0 0-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z'/>"),
+            'phone' => $svg("<path fill='{$navy}' d='M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z'/>"),
+            'chat' => $svg("<path fill='{$navy}' d='M12 2a10 10 0 0 0-8.7 15L2 22l5.2-1.3A10 10 0 1 0 12 2z'/>"),
+            'mail' => $svg("<path fill='{$navy}' d='M2 5h20v14H2z'/><path fill='none' stroke='#fff' stroke-width='2' d='M3 6l9 7 9-7'/>"),
+            'web' => $svg("<circle cx='12' cy='12' r='10' fill='{$navy}'/><path fill='none' stroke='#fff' stroke-width='1.6' d='M2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20'/>"),
+            'band' => $svg("<polygon points='40,0 300,0 300,60 0,60' fill='#c2410c'/><polygon points='0,60 40,0 60,0 20,60' fill='#1f2a5a'/>", '0 0 300 60'),
+        ];
     }
 
     /** Our business details for printed bills (Settings → Business details). */
