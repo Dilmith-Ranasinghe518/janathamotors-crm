@@ -524,7 +524,7 @@ export function ProductsPage() {
       {formOpen && (
         <Modal title={editing ? 'Edit product' : 'New product'} onClose={closeForm} wide>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-            <Input label="Item Code" required placeholder="Your code for this item" value={form.item_code} onChange={(e) => setForm({ ...form, item_code: e.target.value })} />
+            <Input label="Item Code" placeholder="Your code for this item" value={form.item_code} onChange={(e) => setForm({ ...form, item_code: e.target.value })} />
             <Input label="Item Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Input label="Part No" placeholder="Manufacturer / OEM part number" value={form.part_no} onChange={(e) => setForm({ ...form, part_no: e.target.value })} />
             <Input

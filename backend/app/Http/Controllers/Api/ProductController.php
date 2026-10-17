@@ -80,7 +80,7 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'item_code' => ['required', 'string', 'max:100', 'unique:products,item_code'],
+            'item_code' => ['nullable', 'string', 'max:100', 'unique:products,item_code'],
             'part_no' => ['nullable', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:categories,id'],
@@ -114,7 +114,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $data = $request->validate([
-            'item_code' => ['required', 'string', 'max:100', 'unique:products,item_code,'.$product->id],
+            'item_code' => ['nullable', 'string', 'max:100', 'unique:products,item_code,'.$product->id],
             'part_no' => ['nullable', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:categories,id'],
@@ -374,10 +374,11 @@ class ProductController extends Controller
             }
         }
 
-        if (! isset($columnMap['item_code']) || ! isset($columnMap['name'])) {
+        $hasIdentifier = isset($columnMap['item_no']) || isset($columnMap['item_code']) || isset($columnMap['part_no']);
+        if (! $hasIdentifier || ! isset($columnMap['name'])) {
             fclose($handle);
             return response()->json([
-                'message' => "Invalid CSV format: The file must contain at least 'Item Code' and 'Name' columns.",
+                'message' => "Invalid CSV format: The file must contain a 'Name' column and at least one of 'Item No', 'Item Code' or 'Part No'.",
             ], 422);
         }
 
@@ -408,17 +409,18 @@ class ProductController extends Controller
 
             $itemNo = isset($columnMap['item_no']) ? trim((string) ($row[$columnMap['item_no']] ?? '')) : '';
             $partNo = isset($columnMap['part_no']) ? trim((string) ($row[$columnMap['part_no']] ?? '')) : '';
-            $itemCode = trim((string) ($row[$columnMap['item_code']] ?? ''));
+            $itemCode = isset($columnMap['item_code']) ? trim((string) ($row[$columnMap['item_code']] ?? '')) : '';
+            $rowLabel = $itemNo ?: ($itemCode ?: $partNo);
             $name = isset($columnMap['name']) && isset($row[$columnMap['name']]) ? trim((string) $row[$columnMap['name']]) : '';
 
-            if ($itemCode === '') {
-                $errors[] = "Row {$rowNumber}: Missing Item Code. Row skipped.";
+            if ($rowLabel === '') {
+                $errors[] = "Row {$rowNumber}: Missing Item No, Item Code and Part No. Row skipped.";
                 $skipped++;
                 continue;
             }
 
             if (empty($name)) {
-                $errors[] = "Row {$rowNumber} (Item Code {$itemCode}): Missing product name. Row skipped.";
+                $errors[] = "Row {$rowNumber} ({$rowLabel}): Missing product name. Row skipped.";
                 $skipped++;
                 continue;
             }
@@ -511,9 +513,10 @@ class ProductController extends Controller
             $stockSpecified = isset($columnMap['stock']) && is_numeric(trim((string) ($row[$columnMap['stock']] ?? '')));
             $targetStock = $stockSpecified ? (int) trim((string) $row[$columnMap['stock']]) : 0;
 
-            // Match on Item Code; the system Item No (from an earlier export) also works.
-            $product = Product::where('item_code', $itemCode)->first()
-                ?? ($itemNo !== '' ? Product::where('item_no', $itemNo)->first() : null);
+            // Match an existing product by Item No, then Item Code, then Part No.
+            $product = ($itemNo !== '' ? Product::where('item_no', $itemNo)->first() : null)
+                ?? ($itemCode !== '' ? Product::where('item_code', $itemCode)->first() : null)
+                ?? ($partNo !== '' ? Product::where('part_no', $partNo)->first() : null);
 
             if ($product) {
                 if (! $updateExisting) {
@@ -523,7 +526,7 @@ class ProductController extends Controller
 
                 $product->update([
                     'part_no' => $partNo !== '' ? $partNo : $product->part_no,
-                    'item_code' => $itemCode,
+                    'item_code' => $itemCode !== '' ? $itemCode : $product->item_code,
                     'name' => $name,
                     'category_id' => $categoryId ?? $product->category_id,
                     'brand_id' => $brandId ?? $product->brand_id,
@@ -557,7 +560,7 @@ class ProductController extends Controller
             } else {
                 $newProduct = Product::create([
                     'part_no' => $partNo !== '' ? $partNo : null,
-                    'item_code' => $itemCode,
+                    'item_code' => $itemCode !== '' ? $itemCode : null,
                     'name' => $name,
                     'category_id' => $categoryId,
                     'brand_id' => $brandId,

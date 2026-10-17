@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 #[Fillable([
     'part_no', 'item_code', 'name', 'category_id', 'brand_id', 'store_id', 'shelf_location', 'vehicle_brand_id', 'vehicle_model_id', 'compatible_models',
@@ -13,20 +14,21 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Product extends Model
 {
-    /**
-     * Item No is assigned by the system from the row id once the product is saved.
-     */
-    public static function systemItemNo(int $id): string
+    /** System Item Numbers run 4400, 4401, 4402, … */
+    public const FIRST_ITEM_NO = 4400;
+
+    public static function nextItemNo(): string
     {
-        return sprintf('JM-%06d', $id);
+        $max = static::query()->whereRaw("item_no REGEXP '^[0-9]+$'")->max(DB::raw('CAST(item_no AS UNSIGNED)'));
+
+        return (string) max((int) $max + 1, static::FIRST_ITEM_NO);
     }
 
     protected static function booted(): void
     {
-        static::created(function (Product $product) {
+        static::creating(function (Product $product) {
             if (! $product->item_no) {
-                $product->item_no = static::systemItemNo($product->id);
-                $product->saveQuietly();
+                $product->item_no = static::nextItemNo();
             }
         });
     }

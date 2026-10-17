@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Product;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +19,7 @@ return new class extends Migration
         DB::table('products')->whereNull('item_code')->orWhere('item_code', '')->update(['item_code' => DB::raw('item_no')]);
 
         DB::table('products')->orderBy('id')->select('id')->each(function ($row) {
-            DB::table('products')->where('id', $row->id)->update(['item_no' => Product::systemItemNo($row->id)]);
+            DB::table('products')->where('id', $row->id)->update(['item_no' => sprintf('JM-%06d', $row->id)]);
         });
     }
 
