@@ -12,6 +12,7 @@ import {
   Store,
   ArrowLeftRight,
   Ship,
+  MessageCircle,
   UserCheck,
   Shield,
   Settings,
@@ -32,6 +33,7 @@ import logo from '../assets/logo.webp'
 const NAV = [
   { to: '/', label: 'Dashboard', permission: 'view_dashboard', icon: LayoutDashboard, end: true },
   { to: '/invoices', label: 'Invoices', permission: 'create_invoice', icon: Receipt },
+  { to: '/whatsapp-orders', label: 'WhatsApp Orders', permission: 'manage_orders', icon: MessageCircle },
   { to: '/products', label: 'Inventory', permission: 'manage_products', icon: Package },
   { to: '/brands', label: 'Brands & Vehicles', permission: 'manage_products', icon: Car },
   { to: '/customers', label: 'Customers', permission: 'manage_customers', icon: Users },

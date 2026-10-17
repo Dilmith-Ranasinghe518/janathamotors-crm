@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VehicleBrandController;
 use App\Http\Controllers\Api\VehicleModelController;
+use App\Http\Controllers\Api\WhatsappOrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -47,6 +48,12 @@ Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
 
     Route::patch('/shipments/{shipment}/move', [ShipmentController::class, 'move'])->middleware('permission:manage_shipments');
     Route::apiResource('shipments', ShipmentController::class)->middleware('permission:manage_shipments');
+
+    Route::middleware('permission:manage_orders')->group(function () {
+        Route::get('/whatsapp-orders/invoices', [WhatsappOrderController::class, 'invoices']);
+        Route::patch('/whatsapp-orders/{whatsappOrder}/status', [WhatsappOrderController::class, 'updateStatus']);
+        Route::apiResource('whatsapp-orders', WhatsappOrderController::class);
+    });
 
     Route::apiResource('suppliers', SupplierController::class)->middleware('permission:manage_suppliers');
     Route::apiResource('purchases', PurchaseController::class)->only(['index', 'store', 'show'])->middleware('permission:manage_suppliers');
