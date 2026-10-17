@@ -1,21 +1,68 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Eye, FileDown, Pencil, Trash2, Plus, CreditCard } from 'lucide-react'
+import { Eye, FileDown, Pencil, Trash2, Plus, CreditCard, Search, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from '../lib/api'
-import { Card, EmptyState, PageHeader, Select, StatusBadge } from '../components/ui'
+import { Card, EmptyState, Input, PageHeader, Select, StatusBadge } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
+
+const emptyFilters = { status: '', type: '', store_id: '', from: '', to: '' }
 
 export function InvoicesPage() {
   const { can } = useAuth()
   const queryClient = useQueryClient()
-  const [status, setStatus] = useState('')
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [filters, setFilters] = useState(emptyFilters)
+  const [page, setPage] = useState(1)
   const [downloadingId, setDownloadingId] = useState(null)
 
-  const invoicesQuery = useQuery({
-    queryKey: ['invoices', status],
-    queryFn: () => api.get('/invoices', { params: { status: status || undefined } }).then((r) => r.data),
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim())
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  function setFilter(key, value) {
+    setFilters((f) => ({ ...f, [key]: value }))
+    setPage(1)
+  }
+
+  const hasFilters = search || Object.values(filters).some(Boolean)
+  function clearFilters() {
+    setSearch('')
+    setDebouncedSearch('')
+    setFilters(emptyFilters)
+    setPage(1)
+  }
+
+  const storesQuery = useQuery({
+    queryKey: ['stores', 'all'],
+    queryFn: () => api.get('/stores', { params: { all: true } }).then((r) => r.data),
   })
+  const stores = storesQuery.data?.data ?? []
+
+  const invoicesQuery = useQuery({
+    queryKey: ['invoices', debouncedSearch, filters, page],
+    queryFn: () =>
+      api
+        .get('/invoices', {
+          params: {
+            page,
+            search: debouncedSearch || undefined,
+            status: filters.status || undefined,
+            type: filters.type || undefined,
+            store_id: filters.store_id || undefined,
+            from: filters.from || undefined,
+            to: filters.to || undefined,
+          },
+        })
+        .then((r) => r.data),
+    placeholderData: (prev) => prev,
+  })
+  const meta = invoicesQuery.data
 
   const voidMutation = useMutation({
     mutationFn: (id) => api.post(`/invoices/${id}/void`),
@@ -71,21 +118,65 @@ export function InvoicesPage() {
         }
       />
 
-      <div className="mb-4 flex items-center justify-between">
-        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="max-w-xs">
-          <option value="">All statuses</option>
-          <option value="due">Due</option>
-          <option value="partial">Partial</option>
-          <option value="paid">Paid</option>
-          <option value="cancelled">Cancelled</option>
-        </Select>
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <div className="relative w-full sm:w-80">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search invoice no, customer, phone, vehicle no…"
+            className="w-full rounded-lg border border-[var(--line)] bg-[var(--surface)] py-2 pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+          />
+        </div>
+        <div className="w-36">
+          <Select value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
+            <option value="">All statuses</option>
+            <option value="due">Due</option>
+            <option value="partial">Partial</option>
+            <option value="paid">Paid</option>
+            <option value="cancelled">Cancelled</option>
+          </Select>
+        </div>
+        <div className="w-40">
+          <Select value={filters.type} onChange={(e) => setFilter('type', e.target.value)}>
+            <option value="">All bill types</option>
+            <option value="regular">Sales invoices</option>
+            <option value="credit">Credit bills</option>
+          </Select>
+        </div>
+        <div className="w-44">
+          <Select value={filters.store_id} onChange={(e) => setFilter('store_id', e.target.value)}>
+            <option value="">All stores</option>
+            {stores.map((s) => (
+              <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+            ))}
+          </Select>
+        </div>
+        <div className="flex items-end gap-2">
+          <div className="w-36">
+            <Input type="date" aria-label="From date" title="From date" value={filters.from} onChange={(e) => setFilter('from', e.target.value)} />
+          </div>
+          <span className="pb-2 text-xs text-[var(--muted)]">to</span>
+          <div className="w-36">
+            <Input type="date" aria-label="To date" title="To date" value={filters.to} min={filters.from || undefined} onChange={(e) => setFilter('to', e.target.value)} />
+          </div>
+        </div>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="inline-flex items-center gap-1 pb-2 text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)]"
+          >
+            <X className="h-3.5 w-3.5" /> Clear filters
+          </button>
+        )}
       </div>
 
       <Card className="overflow-x-auto">
         {invoicesQuery.isLoading ? (
           <p className="p-6 text-sm text-[var(--muted)]">Loading invoices…</p>
         ) : invoices.length === 0 ? (
-          <EmptyState message="No invoices found." />
+          <EmptyState message={hasFilters ? "No invoices match your search or filters." : "No invoices found."} />
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -175,6 +266,37 @@ export function InvoicesPage() {
               ))}
             </tbody>
           </table>
+        )}
+        {meta && meta.total > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] px-4 py-3 text-xs text-[var(--muted)]">
+            <span>
+              Showing <strong className="text-[var(--ink)]">{meta.from}–{meta.to}</strong> of{' '}
+              <strong className="text-[var(--ink)]">{meta.total}</strong> {meta.total === 1 ? 'invoice' : 'invoices'}
+            </span>
+            {meta.last_page > 1 && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[var(--line)] px-2.5 py-1.5 font-semibold text-[var(--ink)] hover:bg-[var(--paper)] disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" /> Prev
+                </button>
+                <span>
+                  Page {meta.current_page} of {meta.last_page}
+                </span>
+                <button
+                  type="button"
+                  disabled={page >= meta.last_page}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[var(--line)] px-2.5 py-1.5 font-semibold text-[var(--ink)] hover:bg-[var(--paper)] disabled:opacity-40"
+                >
+                  Next <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </Card>
     </div>

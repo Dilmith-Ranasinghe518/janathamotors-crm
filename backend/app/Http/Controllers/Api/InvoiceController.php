@@ -21,7 +21,20 @@ class InvoiceController extends Controller
             ->with('customer:id,name,phone')
             ->when($request->integer('customer_id'), fn ($q, $id) => $q->where('customer_id', $id))
             ->when($request->string('status')->isNotEmpty(), fn ($q) => $q->where('status', $request->string('status')))
+            ->when($request->filled('type'), fn ($q) => $q->where('is_credit', $request->input('type') === 'credit'))
+            ->when($request->filled('store_id'), fn ($q) => $q->where('store_id', $request->input('store_id')))
+            ->when($request->filled('from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date('from')))
+            ->when($request->filled('to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date('to')))
+            ->when($request->string('search')->trim()->isNotEmpty(), function ($q) use ($request) {
+                $term = '%'.$request->string('search')->trim().'%';
+                $q->where(fn ($q) => $q->where('invoice_no', 'like', $term)
+                    ->orWhere('customer_name', 'like', $term)
+                    ->orWhere('customer_phone', 'like', $term)
+                    ->orWhere('vehicle_no', 'like', $term)
+                    ->orWhereHas('customer', fn ($cq) => $cq->where('name', 'like', $term)->orWhere('phone', 'like', $term)));
+            })
             ->latest()
+            ->latest('id')
             ->paginate(20);
     }
 
