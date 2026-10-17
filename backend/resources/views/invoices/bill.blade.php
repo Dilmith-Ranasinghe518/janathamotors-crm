@@ -27,7 +27,7 @@
     .logo { max-height: 64px; max-width: 70px; }
     .name-cell { vertical-align: middle; }
     .co-name { font-size: 45px; font-weight: bold; color: #1f2a5a; margin: 0; letter-spacing: -0.2px; white-space: nowrap; }
-    .info-cell { text-align: right; padding-top: 1px; }
+    .info-cell { text-align: center; padding-top: 4px; }
     .co-line { font-size: 9.5px; color: #1f2937; margin-top: 2px; font-weight: bold; }
     .ico { width: 9px; height: 9px; margin-right: 3px; vertical-align: -1px; }
     .co-tag { font-size: 10.5px; font-weight: bold; color: #c2410c; margin-top: 3px; }
@@ -83,10 +83,9 @@
             @endif
             <td class="name-cell"><p class="co-name">{{ strtoupper($company['legal_name']) }}</p></td>
         </tr>
-        {{-- Rows below: contact lines right-aligned under the name --}}
+        {{-- Rows below: contact lines centred across the header --}}
         <tr>
-            @if($logoDataUri)<td></td>@endif
-            <td class="info-cell">
+            <td colspan="{{ $logoDataUri ? 2 : 1 }}" class="info-cell">
                 @if($company['address'])
                     <div class="co-line"><img src="{{ $icons['pin'] }}" class="ico">{{ $company['address'] }}</div>
                 @endif
