@@ -22,11 +22,11 @@
 
     .band { position: absolute; top: -22px; right: -26px; }
     .band img { width: 150px; height: 34px; }
-    .head { margin: 4px 0 6px; }  /* shrink-to-fit: the name sets the width the lines align to */
-    .logo-cell { width: 64px; vertical-align: middle; padding-right: 8px; }
-    .logo { max-height: 56px; max-width: 62px; }
+    .head { width: 100%; margin: 14px 0 6px; }
+    .logo-cell { width: 72px; vertical-align: middle; padding-right: 8px; }
+    .logo { max-height: 64px; max-width: 70px; }
     .name-cell { vertical-align: middle; }
-    .co-name { font-size: 29px; font-weight: bold; color: #1f2a5a; margin: 0; letter-spacing: -0.2px; white-space: nowrap; }
+    .co-name { font-size: 45px; font-weight: bold; color: #1f2a5a; margin: 0; letter-spacing: -0.2px; white-space: nowrap; }
     .info-cell { text-align: right; padding-top: 1px; }
     .co-line { font-size: 9.5px; color: #1f2937; margin-top: 2px; font-weight: bold; }
     .ico { width: 9px; height: 9px; margin-right: 3px; vertical-align: -1px; }
