@@ -73,9 +73,11 @@ export function InvoiceDetailPage() {
             <Button variant="secondary" onClick={() => downloadPdf('normal')} disabled={Boolean(downloading)}>
               {downloading === 'normal' ? 'Preparing…' : 'PDF'}
             </Button>
-            <Button variant="secondary" onClick={() => downloadPdf('vat')} disabled={Boolean(downloading)}>
-              {downloading === 'vat' ? 'Preparing…' : 'VAT Bill'}
-            </Button>
+            {(invoice.customer_tin || invoice.customer?.tin) && (
+              <Button variant="secondary" onClick={() => downloadPdf('vat')} disabled={Boolean(downloading)}>
+                {downloading === 'vat' ? 'Preparing…' : 'VAT Bill'}
+              </Button>
+            )}
             {invoice.due_amount > 0 && invoice.status !== 'cancelled' && can('create_invoice') && (
               <Button onClick={() => setPayOpen(true)}>Record payment</Button>
             )}
@@ -96,7 +98,7 @@ export function InvoiceDetailPage() {
         <Card className="p-4">
           <p className="text-xs uppercase text-[var(--muted)]">Total (incl. VAT)</p>
           <p className="mt-2 text-lg font-bold tabular-nums">{Number(invoice.total).toFixed(2)}</p>
-          {Number(invoice.vat_amount) > 0 && (
+          {Number(invoice.vat_amount) > 0 && (invoice.customer_tin || invoice.customer?.tin) && (
             <p className="mt-1 text-[11px] text-[var(--muted)]">
               Supply {(Number(invoice.total) - Number(invoice.vat_amount)).toFixed(2)} + VAT {Number(invoice.vat_rate)}%{' '}
               {Number(invoice.vat_amount).toFixed(2)}

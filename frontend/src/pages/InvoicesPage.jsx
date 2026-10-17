@@ -244,6 +244,7 @@ export function InvoicesPage() {
                         <span>{downloadingId === `${inv.id}-normal` ? '…' : 'PDF'}</span>
                       </button>
 
+                      {(inv.customer_tin || inv.customer?.tin) && (
                       <button
                         onClick={() => openPdf(inv, 'vat')}
                         disabled={downloadingId === `${inv.id}-vat`}
@@ -253,6 +254,7 @@ export function InvoicesPage() {
                         <FileDown className="h-3.5 w-3.5" />
                         <span>{downloadingId === `${inv.id}-vat` ? '…' : 'VAT Bill'}</span>
                       </button>
+                      )}
 
                       <Link
                         to={`/invoices/${inv.id}/edit`}

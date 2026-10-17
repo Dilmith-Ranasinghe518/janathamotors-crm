@@ -711,7 +711,7 @@ export function InvoiceCreatePage() {
                 <FileText className="h-5 w-5 text-[var(--accent)]" />
                 <span>Tax Invoice Details</span>
               </h2>
-              <span className="text-xs text-[var(--muted)]">Printed on the VAT bill</span>
+              <span className="text-xs text-[var(--muted)]">Enter the purchaser's TIN to issue a VAT bill</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
@@ -809,10 +809,11 @@ export function InvoiceCreatePage() {
                 <p className="mt-1 font-mono text-2xl font-black text-[var(--accent)]">
                   LKR {Math.max(0, total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <p className="mt-0.5 text-[11px] text-[var(--muted)]">Including VAT</p>
+                {customerTin.trim() && <p className="mt-0.5 text-[11px] text-[var(--muted)]">Including VAT</p>}
               </div>
 
-              {/* VAT breakdown: Total = (Total − VAT) + VAT */}
+              {/* VAT breakdown: Total = (Total − VAT) + VAT — only for VAT bills (purchaser has a TIN) */}
+              {customerTin.trim() && (
               <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3 text-xs shadow-xs">
                 <p className="mb-2 font-bold uppercase tracking-wider text-[var(--ink)]">VAT Breakdown</p>
                 <div className="flex justify-between py-0.5 text-[var(--muted)]">
@@ -831,6 +832,7 @@ export function InvoiceCreatePage() {
                   <p className="mt-1.5 text-[10px] text-[var(--muted)]">Set the VAT rate in Settings to show VAT on bills.</p>
                 )}
               </div>
+              )}
 
               <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5 shadow-xs">
                 <label className="flex items-center gap-2 cursor-pointer select-none mb-2 border-b border-[var(--line)] pb-2">

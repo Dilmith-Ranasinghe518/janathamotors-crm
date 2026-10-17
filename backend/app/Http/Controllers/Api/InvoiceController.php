@@ -22,7 +22,7 @@ class InvoiceController extends Controller
     public function index(Request $request)
     {
         return Invoice::query()
-            ->with('customer:id,name,phone')
+            ->with('customer:id,name,phone,tin')
             ->when($request->integer('customer_id'), fn ($q, $id) => $q->where('customer_id', $id))
             ->when($request->string('status')->isNotEmpty(), fn ($q) => $q->where('status', $request->string('status')))
             ->when($request->filled('type'), fn ($q) => $q->where('is_credit', $request->input('type') === 'credit'))
@@ -371,16 +371,20 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Download the bill as PDF: the normal bill, or (?type=vat) the tax invoice.
+     * Download the bill as PDF: the normal bill, or (?type=vat) the tax invoice when the purchaser has a TIN.
      */
     public function pdf(Request $request, Invoice $invoice)
     {
         $invoice->load(['items.product.brand', 'items.product.vehicleBrand', 'items.product.vehicleModel', 'customer', 'creator:id,name']);
 
-        $isVat = $request->query('type') === 'vat';
+        // A tax invoice needs the purchaser's TIN; without one the normal bill is issued instead.
+        $purchaserTin = $invoice->customer_tin ?: $invoice->customer?->tin;
+        $isVat = $request->query('type') === 'vat' && filled($purchaserTin);
         $logoPath = resource_path('images/logo.png');
 
-        $pdf = Pdf::loadView($isVat ? 'invoices.vat' : 'invoices.pdf', [
+        $pdf = Pdf::loadView('invoices.bill', [
+            'isVat' => $isVat,
+            'purchaserTin' => $purchaserTin,
             'invoice' => $invoice,
             'company' => $this->companyDetails(),
             'vat' => $this->vatBreakdown($invoice),
