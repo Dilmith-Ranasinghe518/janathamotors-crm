@@ -20,17 +20,16 @@
     body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #1f2937; line-height: 1.35; }
     table { border-collapse: collapse; }
 
-    .band { position: absolute; top: -22px; right: -26px; }
-    .band img { width: 150px; height: 34px; }
-    .head { width: 100%; margin: 14px 0 6px; }
+    .head { width: 100%; margin: 2px 0 0; }
+    .head-rule { border-top: 2px solid #c2410c; border-bottom: 1px solid #1f2a5a; height: 2px; margin: 8px 0 4px; }
     .logo-cell { width: 72px; vertical-align: middle; padding-right: 8px; }
     .logo { max-height: 64px; max-width: 70px; }
     .name-cell { vertical-align: middle; }
     .co-name { font-size: 45px; font-weight: bold; color: #1f2a5a; margin: 0; letter-spacing: -0.2px; white-space: nowrap; }
     .info-cell { text-align: center; padding-top: 4px; }
-    .co-line { font-size: 9.5px; color: #1f2937; margin-top: 2px; font-weight: bold; }
-    .ico { width: 9px; height: 9px; margin-right: 3px; vertical-align: -1px; }
-    .co-tag { font-size: 10.5px; font-weight: bold; color: #c2410c; margin-top: 3px; }
+    .co-line { font-size: 11px; color: #1f2937; margin-top: 2px; font-weight: bold; }
+    .ico { width: 10px; height: 10px; margin-right: 3px; vertical-align: -1px; }
+    .co-tag { font-size: 12.5px; font-weight: bold; color: #c2410c; margin-top: 3px; }
 
     .title { text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; color: #111827; margin: 6px 0 8px; }
     .status { text-align: center; margin: -4px 0 8px; font-size: 8.5px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -74,7 +73,6 @@
 </head>
 <body>
     {{-- Business header (logo · name · icon contact lines · tagline · slanted accent band) --}}
-    <div class="band"><img src="{{ $icons['band'] }}" alt=""></div>
     <table class="head">
         {{-- Row 1: logo beside the company name --}}
         <tr>
@@ -110,6 +108,8 @@
             </td>
         </tr>
     </table>
+
+    <div class="head-rule"></div>
 
     <div class="title">{{ $title }}</div>
     @unless($isVat)

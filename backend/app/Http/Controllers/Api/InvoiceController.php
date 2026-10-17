@@ -399,7 +399,7 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Small SVG icons and the slanted header band, as data URIs (the PDF renderer has no icon font).
+     * Small SVG contact icons, as data URIs (the PDF renderer has no icon font).
      */
     private function billIcons(): array
     {
@@ -414,7 +414,6 @@ class InvoiceController extends Controller
             'chat' => $svg("<path fill='{$navy}' d='M12 2a10 10 0 0 0-8.7 15L2 22l5.2-1.3A10 10 0 1 0 12 2z'/>"),
             'mail' => $svg("<path fill='{$navy}' d='M2 5h20v14H2z'/><path fill='none' stroke='#fff' stroke-width='2' d='M3 6l9 7 9-7'/>"),
             'web' => $svg("<circle cx='12' cy='12' r='10' fill='{$navy}'/><path fill='none' stroke='#fff' stroke-width='1.6' d='M2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20'/>"),
-            'band' => $svg("<polygon points='40,0 300,0 300,60 0,60' fill='#c2410c'/><polygon points='0,60 40,0 60,0 20,60' fill='#1f2a5a'/>", '0 0 300 60'),
         ];
     }
 
