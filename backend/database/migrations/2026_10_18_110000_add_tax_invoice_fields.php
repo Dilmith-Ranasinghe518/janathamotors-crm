@@ -37,7 +37,7 @@ return new class extends Migration
         // Business details for the bills — prefilled from what was printed before; edit in Settings.
         $defaults = [
             'company_legal_name' => 'Janatha Motors (Pvt) Ltd',
-            'company_address' => 'Federal Motors Building, 153 1/4, 1st Floor, Panchikawatta Road, Colombo 01000',
+            'company_address' => 'No 225, 25 Mohideen Masjid Rd, Colombo 01000',
             'company_phone' => '071 319 0234',
             'company_whatsapp' => '076 132 1950',
             'company_email' => 'janathamotors@gmail.com',
