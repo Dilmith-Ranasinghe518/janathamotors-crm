@@ -123,10 +123,12 @@ function CompanySettingsForm() {
 
   if (isLoading || !form) return null
 
+  const field = (key) => (e) => setForm({ ...form, [key]: e.target.value })
+
   return (
-    <Card className="max-w-xl p-6">
+    <Card className="max-w-3xl p-6">
       <h2 className="text-base font-bold text-[var(--ink)] mb-1">Company Profile &amp; Invoicing</h2>
-      <p className="text-xs text-[var(--muted)] mb-4">Manage company branding, default invoice prefixes, and tax rates.</p>
+      <p className="text-xs text-[var(--muted)] mb-4">Business details printed on bills and tax invoices, invoice numbering and VAT.</p>
 
       <form
         onSubmit={(e) => {
@@ -134,12 +136,39 @@ function CompanySettingsForm() {
           setError('')
           saveMutation.mutate(form)
         }}
-        className="flex flex-col gap-4"
+        className="grid grid-cols-1 gap-4 md:grid-cols-2"
       >
-        <Input label="Company name" value={form.company_name ?? ''} onChange={(e) => setForm({ ...form, company_name: e.target.value })} />
-        <Input label="Tagline" value={form.company_tagline ?? ''} onChange={(e) => setForm({ ...form, company_tagline: e.target.value })} />
-        <Input label="Invoice prefix" value={form.invoice_prefix ?? ''} onChange={(e) => setForm({ ...form, invoice_prefix: e.target.value })} />
-        <Input label="Tax rate (%)" type="number" step="0.01" value={form.tax_rate ?? ''} onChange={(e) => setForm({ ...form, tax_rate: e.target.value })} />
+        <p className="md:col-span-2 text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Business details</p>
+        <Input label="Trading name" value={form.company_name ?? ''} onChange={field('company_name')} />
+        <Input label="Registered / legal name" placeholder="e.g. Janatha Motors (Pvt) Ltd" value={form.company_legal_name ?? ''} onChange={field('company_legal_name')} />
+        <Input label="Tagline" className="md:col-span-2" value={form.company_tagline ?? ''} onChange={field('company_tagline')} />
+        <Input label="Address" className="md:col-span-2" value={form.company_address ?? ''} onChange={field('company_address')} />
+        <Input label="Telephone" placeholder="e.g. 011 234 5678, 071 319 0234" value={form.company_phone ?? ''} onChange={field('company_phone')} />
+        <Input label="WhatsApp" value={form.company_whatsapp ?? ''} onChange={field('company_whatsapp')} />
+        <Input label="Email" type="email" value={form.company_email ?? ''} onChange={field('company_email')} />
+        <Input label="Website" placeholder="e.g. www.janathamotors.lk" value={form.company_website ?? ''} onChange={field('company_website')} />
+        <Input label="Branches" className="md:col-span-2" placeholder="e.g. Panchikawatta, Maharagama" value={form.company_branches ?? ''} onChange={field('company_branches')} />
+
+        <p className="md:col-span-2 mt-2 text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Tax &amp; registration</p>
+        <Input label="VAT registration no. / TIN" placeholder="e.g. 228580392-7000" value={form.vat_reg_no ?? ''} onChange={field('vat_reg_no')} />
+        <Input label="Business registration no." placeholder="e.g. PV 00123456" value={form.business_reg_no ?? ''} onChange={field('business_reg_no')} />
+        <div>
+          <Input label="VAT rate (%)" type="number" step="0.01" min="0" value={form.tax_rate ?? ''} onChange={field('tax_rate')} />
+          <p className="mt-1 text-[11px] text-[var(--muted)]">Already included in selling prices — bills break it out, never add it on top.</p>
+        </div>
+        <Input label="Invoice prefix" value={form.invoice_prefix ?? ''} onChange={field('invoice_prefix')} />
+
+        <label className="md:col-span-2 flex flex-col gap-1 text-sm">
+          <span className="font-medium text-[var(--ink)]">Bill footer notes (one per line)</span>
+          <textarea
+            rows={3}
+            value={form.invoice_footer_note ?? ''}
+            onChange={field('invoice_footer_note')}
+            placeholder="e.g. Only returnable goods are accepted within 7 days."
+            className="w-full rounded-lg border border-[var(--line)] bg-[var(--paper)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
+          />
+        </label>
+        <div className="md:col-span-2 flex flex-col gap-4">
 
         {error && <p className="text-sm font-medium text-[var(--critical)]">{error}</p>}
         {saved && <p className="text-sm font-medium text-[var(--success)]">Company settings saved.</p>}
@@ -148,6 +177,7 @@ function CompanySettingsForm() {
           <Button type="submit" disabled={saveMutation.isPending}>
             {saveMutation.isPending ? 'Saving…' : 'Save settings'}
           </Button>
+        </div>
         </div>
       </form>
     </Card>

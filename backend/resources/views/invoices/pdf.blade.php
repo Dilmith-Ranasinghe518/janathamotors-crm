@@ -9,17 +9,17 @@
     .header-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
     .header-table td { vertical-align: top; }
     
-    .company-name { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.5px; }
+    .company-name { font-size: 20px; font-weight: bold; color: #0f172a; margin: 0; letter-spacing: -0.5px; }
     .tagline { color: #64748b; margin: 2px 0 0; font-size: 10px; font-weight: 600; }
     .logo-img { max-height: 50px; width: auto; margin-bottom: 4px; }
     .company-info { font-size: 9.5px; color: #475569; line-height: 1.4; margin-top: 4px; }
     .company-info strong { color: #0f172a; }
     
-    .inv-title { font-size: 22px; font-weight: 800; color: #d97706; text-transform: uppercase; text-align: right; margin: 0; }
+    .inv-title { font-size: 22px; font-weight: bold; color: #d97706; text-transform: uppercase; text-align: right; margin: 0; }
     .inv-details { text-align: right; font-size: 10px; color: #475569; margin-top: 4px; }
     .inv-details strong { color: #0f172a; }
     
-    .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+    .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
     .status-paid { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
     .status-partial { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
     .status-due { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
@@ -28,7 +28,7 @@
     .info-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
     .info-table { width: 100%; border-collapse: collapse; }
     .info-table td { vertical-align: top; font-size: 10.5px; color: #334155; }
-    .info-title { font-size: 9px; font-weight: 800; text-transform: uppercase; tracking: 0.5px; color: #64748b; margin-bottom: 4px; }
+    .info-title { font-size: 9px; font-weight: bold; text-transform: uppercase; tracking: 0.5px; color: #64748b; margin-bottom: 4px; }
     .info-value { font-size: 11px; font-weight: 700; color: #0f172a; }
     
     .items-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
@@ -48,7 +48,7 @@
     
     .totals-table { width: 270px; border-collapse: collapse; margin-left: auto; }
     .totals-table td { padding: 4px 8px; font-size: 10.5px; color: #334155; }
-    .totals-table .grand-row td { background-color: #fef3c7; border-top: 2px solid #d97706; border-bottom: 2px solid #d97706; font-size: 13px; font-weight: 800; color: #92400e; padding: 6px 8px; }
+    .totals-table .grand-row td { background-color: #fef3c7; border-top: 2px solid #d97706; border-bottom: 2px solid #d97706; font-size: 13px; font-weight: bold; color: #92400e; padding: 6px 8px; }
     
     .footer { margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; font-size: 9px; color: #94a3b8; }
 </style>
@@ -65,10 +65,14 @@
                     <p class="tagline">{{ $company['tagline'] }}</p>
                 @endif
                 <div class="company-info">
-                    <strong>Janatha Motors</strong> • We Give You The Best<br>
-                    Federal Motors Building, 153 1/4, 1st Floor, Panchikawatta Road, Colombo 01000<br>
-                    <strong>Phone:</strong> 071 319 0234 &nbsp;|&nbsp; <strong>WhatsApp:</strong> 076 132 1950<br>
-                    <strong>Email:</strong> janathamotors@gmail.com
+                    <strong>{{ $company['legal_name'] }}</strong>@if($company['tagline']) • {{ $company['tagline'] }}@endif<br>
+                    @if($company['address']){{ $company['address'] }}<br>@endif
+                    @if($company['phone'])<strong>Phone:</strong> {{ $company['phone'] }}@endif
+                    @if($company['whatsapp']) &nbsp;|&nbsp; <strong>WhatsApp:</strong> {{ $company['whatsapp'] }}@endif<br>
+                    @if($company['email'])<strong>Email:</strong> {{ $company['email'] }}@endif
+                    @if($company['website']) &nbsp;|&nbsp; {{ $company['website'] }}@endif
+                    @if($company['vat_reg_no'])<br><strong>VAT Reg. No:</strong> {{ $company['vat_reg_no'] }}@endif
+                    @if($company['business_reg_no']) &nbsp;|&nbsp; <strong>BR No:</strong> {{ $company['business_reg_no'] }}@endif
                 </div>
             </td>
             <td style="width: 42%;">
@@ -99,7 +103,7 @@
                     <div class="info-title">Vehicle Information</div>
                     @if($invoice->vehicle_no || $invoice->vehicle_model || $invoice->vehicle_year)
                         @if($invoice->vehicle_no)
-                            <div>Reg No: <span style="font-family: monospace; font-weight: 800; color: #d97706; background: #fff3dc; padding: 1px 4px; border-radius: 3px;">{{ $invoice->vehicle_no }}</span></div>
+                            <div>Reg No: <span style="font-family: monospace; font-weight: bold; color: #d97706; background: #fff3dc; padding: 1px 4px; border-radius: 3px;">{{ $invoice->vehicle_no }}</span></div>
                         @endif
                         <div style="margin-top: 2px; color: #475569;">
                             @if($invoice->vehicle_model) <strong>Model:</strong> {{ $invoice->vehicle_model }} &nbsp; @endif
@@ -118,7 +122,7 @@
         <thead>
             <tr>
                 <th style="width: 5%; text-align: center;">#</th>
-                <th style="width: 18%;">Item / Part No</th>
+                <th style="width: 18%;">Item Code / Part No</th>
                 <th style="width: 39%;">Item Description</th>
                 <th style="width: 8%; text-align: center;">Qty</th>
                 <th style="width: 10%; text-align: right;">Unit Price</th>
@@ -131,7 +135,7 @@
             <tr>
                 <td style="text-align: center; color: #64748b; font-weight: bold;">{{ $index + 1 }}</td>
                 <td>
-                    <span class="sku-badge">{{ $item->product->item_no }}</span>
+                    <span class="sku-badge">{{ $item->product->item_code ?: $item->product->item_no }}</span>
                     @if($item->product->part_no)
                         <div style="font-size: 8.5px; color: #64748b; margin-top: 2px;">{{ $item->product->part_no }}</div>
                     @endif
@@ -145,7 +149,7 @@
                 <td style="text-align: center; font-weight: 700;">{{ $item->quantity }}</td>
                 <td class="num">{{ number_format($item->unit_price, 2) }}</td>
                 <td class="num">{{ number_format($item->discount, 2) }}</td>
-                <td class="num" style="font-weight: 800; color: #0f172a;">{{ number_format($item->line_total, 2) }}</td>
+                <td class="num" style="font-weight: bold; color: #0f172a;">{{ number_format($item->line_total, 2) }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -156,10 +160,12 @@
         <tr>
             <td style="width: 50%;">
                 <div class="notes-box">
+                    @if($paymentMode)<strong>Mode of Payment:</strong> {{ $paymentMode }}<br><br>@endif
                     <strong>Payment Terms & Conditions:</strong><br>
-                    • All spare parts carry standard manufacturer warranty.<br>
-                    • Please retain this original invoice for any warranty claims.<br>
-                    • Thank you for choosing Janatha Motors!
+                    @foreach(array_filter(preg_split('/\r?\n/', (string) $company['footer_note'])) as $note)
+                        • {{ $note }}<br>
+                    @endforeach
+                    • Thank you for choosing {{ $company['name'] }}!
                 </div>
             </td>
             <td style="width: 50%;">
@@ -184,6 +190,13 @@
                         <td>Grand Total</td>
                         <td class="num">LKR {{ number_format($invoice->total, 2) }}</td>
                     </tr>
+                    @if($vat['vat_amount'] > 0 && $invoice->tax <= 0)
+                    <tr>
+                        <td colspan="2" style="font-size: 9px; color: #64748b; text-align: right;">
+                            Prices include VAT ({{ rtrim(rtrim(number_format($vat['rate'], 2), '0'), '.') }}%): LKR {{ number_format($vat['vat_amount'], 2) }}
+                        </td>
+                    </tr>
+                    @endif
                     <tr>
                         <td style="padding-top: 6px;">Amount Paid</td>
                         <td class="num" style="padding-top: 6px; color: #15803d; font-weight: 700;">LKR {{ number_format($invoice->paid_amount, 2) }}</td>
@@ -199,7 +212,7 @@
 
     <!-- Footer -->
     <div class="footer">
-        Issued by <strong>Janatha Motors Panchikawatta</strong> on {{ $invoice->created_at->format('Y-m-d H:i') }}
+        Issued by <strong>{{ $company['legal_name'] }}</strong> on {{ $invoice->created_at->format('Y-m-d H:i') }}
         <div style="margin-top: 4px; font-size: 8.5px; color: #94a3b8; letter-spacing: 0.3px;">
             Software Developed by <strong>Calcify Int</strong>
         </div>

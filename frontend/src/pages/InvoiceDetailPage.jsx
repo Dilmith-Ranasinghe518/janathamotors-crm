@@ -36,15 +36,18 @@ export function InvoiceDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invoices', id] }),
   })
 
-  async function downloadPdf() {
-    setDownloading(true)
+  async function downloadPdf(type = 'normal') {
+    setDownloading(type)
     try {
-      const response = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' })
+      const response = await api.get(`/invoices/${id}/pdf`, {
+        params: { type: type === 'vat' ? 'vat' : undefined },
+        responseType: 'blob',
+      })
       const file = new Blob([response.data], { type: 'application/pdf' })
       const url = URL.createObjectURL(file)
       window.open(url, '_blank')
     } finally {
-      setDownloading(false)
+      setDownloading(null)
     }
   }
 
@@ -67,8 +70,11 @@ export function InvoiceDetailPage() {
                 <span>Edit Invoice</span>
               </Link>
             )}
-            <Button variant="secondary" onClick={downloadPdf} disabled={downloading}>
-              {downloading ? 'Preparing…' : 'PDF'}
+            <Button variant="secondary" onClick={() => downloadPdf('normal')} disabled={Boolean(downloading)}>
+              {downloading === 'normal' ? 'Preparing…' : 'PDF'}
+            </Button>
+            <Button variant="secondary" onClick={() => downloadPdf('vat')} disabled={Boolean(downloading)}>
+              {downloading === 'vat' ? 'Preparing…' : 'VAT Bill'}
             </Button>
             {invoice.due_amount > 0 && invoice.status !== 'cancelled' && can('create_invoice') && (
               <Button onClick={() => setPayOpen(true)}>Record payment</Button>
@@ -88,8 +94,14 @@ export function InvoiceDetailPage() {
           <div className="mt-2"><StatusBadge status={invoice.status} /></div>
         </Card>
         <Card className="p-4">
-          <p className="text-xs uppercase text-[var(--muted)]">Total</p>
+          <p className="text-xs uppercase text-[var(--muted)]">Total (incl. VAT)</p>
           <p className="mt-2 text-lg font-bold tabular-nums">{Number(invoice.total).toFixed(2)}</p>
+          {Number(invoice.vat_amount) > 0 && (
+            <p className="mt-1 text-[11px] text-[var(--muted)]">
+              Supply {(Number(invoice.total) - Number(invoice.vat_amount)).toFixed(2)} + VAT {Number(invoice.vat_rate)}%{' '}
+              {Number(invoice.vat_amount).toFixed(2)}
+            </p>
+          )}
         </Card>
         <Card className="p-4">
           <p className="text-xs uppercase text-[var(--muted)]">Paid</p>

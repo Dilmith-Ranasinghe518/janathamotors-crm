@@ -274,9 +274,13 @@ export function InvoiceCreatePage() {
 
   const [lines, setLines] = useState([{ ...blankLine }])
   const [discount, setDiscount] = useState('0')
-  const [tax, setTax] = useState('0')
-  const [applyTax, setApplyTax] = useState(false)
-  const [taxRate, setTaxRate] = useState('0')
+  // Tax-invoice (VAT bill) details
+  const [customerTin, setCustomerTin] = useState('')
+  const [customerAddress, setCustomerAddress] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().slice(0, 10))
+  const [placeOfSupply, setPlaceOfSupply] = useState('')
+  const [paymentMode, setPaymentMode] = useState(searchParams.get('type') === 'credit' ? 'credit' : 'cash')
+  const [additionalInfo, setAdditionalInfo] = useState('')
   const [paidAmount, setPaidAmount] = useState('0')
   const [isFullyPaid, setIsFullyPaid] = useState(false)
   const [error, setError] = useState('')
@@ -302,12 +306,6 @@ export function InvoiceCreatePage() {
   const vehicleModels = vehicleModelsQuery.data ?? []
 
   useEffect(() => {
-    if (settingsQuery.data?.tax_rate !== undefined && settingsQuery.data?.tax_rate !== null) {
-      setTaxRate(String(settingsQuery.data.tax_rate))
-    }
-  }, [settingsQuery.data])
-
-  useEffect(() => {
     if (isEdit && existingInvoiceQuery.data) {
       const inv = existingInvoiceQuery.data
       setCustomerId(inv.customer_id ? String(inv.customer_id) : '')
@@ -317,13 +315,12 @@ export function InvoiceCreatePage() {
       setVehicleModel(inv.vehicle_model || '')
       setVehicleYear(inv.vehicle_year || '')
       setDiscount(String(inv.discount || '0'))
-      setTax(String(inv.tax || '0'))
-      setApplyTax(Number(inv.tax) > 0)
-
-      // Set tax rate from Settings
-      if (settingsQuery.data?.tax_rate !== undefined && settingsQuery.data?.tax_rate !== null) {
-        setTaxRate(String(settingsQuery.data.tax_rate))
-      }
+      setCustomerTin(inv.customer_tin || '')
+      setCustomerAddress(inv.customer_address || '')
+      setDeliveryDate(String(inv.delivery_date || inv.created_at || '').slice(0, 10))
+      setPlaceOfSupply(inv.place_of_supply || '')
+      setPaymentMode(inv.payment_mode || '')
+      setAdditionalInfo(inv.additional_info || '')
 
       setPaidAmount(String(inv.paid_amount || '0'))
       setIsFullyPaid(Number(inv.due_amount) <= 0)
@@ -341,24 +338,19 @@ export function InvoiceCreatePage() {
         )
       }
     }
-  }, [isEdit, existingInvoiceQuery.data, settingsQuery.data])
+  }, [isEdit, existingInvoiceQuery.data])
 
   const subtotal = useMemo(
     () => lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unit_price) || 0) - (Number(l.discount) || 0), 0),
     [lines]
   )
 
-  useEffect(() => {
-    if (applyTax) {
-      const netAmount = Math.max(0, subtotal - (Number(discount) || 0))
-      const calcTax = (netAmount * (Number(taxRate) || 0)) / 100
-      setTax(calcTax.toFixed(2))
-    } else {
-      setTax('0')
-    }
-  }, [applyTax, taxRate, subtotal, discount])
-
-  const total = subtotal - (Number(discount) || 0) + (Number(tax) || 0)
+  // Selling prices already include VAT, so the total is never increased — VAT is broken out of it.
+  const total = subtotal - (Number(discount) || 0)
+  const vatRate = Number(isEdit ? existingInvoiceQuery.data?.vat_rate : settingsQuery.data?.tax_rate) || 0
+  const vatAmount = Math.max(0, total) * vatRate / (100 + vatRate)
+  const valueOfSupply = Math.max(0, total) - vatAmount
+  const money = (v) => v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
   useEffect(() => {
     if (isFullyPaid) {
@@ -390,6 +382,8 @@ export function InvoiceCreatePage() {
     setCustomerName(customer.name)
     setCustomerPhone(customer.phone || '')
     if (customer.vehicle_no) setVehicleNo(customer.vehicle_no)
+    if (customer.tin) setCustomerTin(customer.tin)
+    if (customer.address) setCustomerAddress(customer.address)
   }
 
   function handleSelectProduct(index, product) {
@@ -441,7 +435,12 @@ export function InvoiceCreatePage() {
       vehicle_model: vehicleModel || null,
       vehicle_year: vehicleYear || null,
       discount: Number(discount) || 0,
-      tax: Number(tax) || 0,
+      customer_tin: customerTin || null,
+      customer_address: customerAddress || null,
+      delivery_date: deliveryDate || null,
+      place_of_supply: placeOfSupply || null,
+      payment_mode: paymentMode || null,
+      additional_info: additionalInfo || null,
       paid_amount: Number(paidAmount) || 0,
       is_credit: isCredit,
       items,
@@ -704,6 +703,76 @@ export function InvoiceCreatePage() {
               <span>Add Another Item Line</span>
             </button>
           </Card>
+
+          {/* Card 3: Tax invoice (VAT bill) details */}
+          <Card className="p-6">
+            <div className="mb-4 flex items-center justify-between border-b border-[var(--line)] pb-3">
+              <h2 className="text-base font-bold text-[var(--ink)] flex items-center gap-2">
+                <FileText className="h-5 w-5 text-[var(--accent)]" />
+                <span>Tax Invoice Details</span>
+              </h2>
+              <span className="text-xs text-[var(--muted)]">Printed on the VAT bill</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { label: "Purchaser's TIN / VAT No", value: customerTin, set: setCustomerTin, placeholder: 'e.g. 228580392-7000' },
+                { label: 'Place of Supply', value: placeOfSupply, set: setPlaceOfSupply, placeholder: 'e.g. Colombo 10' },
+              ].map((f) => (
+                <label key={f.label} className="flex flex-col gap-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">{f.label}</span>
+                  <input
+                    value={f.value}
+                    placeholder={f.placeholder}
+                    onChange={(e) => f.set(e.target.value)}
+                    className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2.5 text-sm text-[var(--ink)] placeholder-[var(--muted)] focus:border-[var(--accent)] focus:outline-none"
+                  />
+                </label>
+              ))}
+              <label className="flex flex-col gap-1.5 md:col-span-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Purchaser's Address</span>
+                <textarea
+                  rows={2}
+                  value={customerAddress}
+                  onChange={(e) => setCustomerAddress(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2.5 text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Date of Delivery</span>
+                <input
+                  type="date"
+                  value={deliveryDate}
+                  onChange={(e) => setDeliveryDate(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2.5 text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Mode of Payment</span>
+                <select
+                  value={paymentMode}
+                  onChange={(e) => setPaymentMode(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2.5 text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
+                >
+                  <option value="">— Not specified —</option>
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="cheque">Cheque</option>
+                  <option value="online">Online Payment</option>
+                  <option value="credit">Credit</option>
+                </select>
+              </label>
+              <label className="flex flex-col gap-1.5 md:col-span-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Additional Information</span>
+                <input
+                  value={additionalInfo}
+                  placeholder="Anything else to print on the bill (PO number, remarks…)"
+                  onChange={(e) => setAdditionalInfo(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2.5 text-sm text-[var(--ink)] placeholder-[var(--muted)] focus:border-[var(--accent)] focus:outline-none"
+                />
+              </label>
+            </div>
+          </Card>
         </div>
 
         {/* Right Sidebar Column: Billing Summary & Payment Actions */}
@@ -735,57 +804,32 @@ export function InvoiceCreatePage() {
                 />
               </div>
 
-              <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3 shadow-xs">
-                <label className="flex items-center justify-between cursor-pointer select-none">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={applyTax}
-                      onChange={(e) => setApplyTax(e.target.checked)}
-                      className="h-4 w-4 rounded border-[var(--line)] text-[var(--accent)] focus:ring-[var(--accent)] accent-[var(--accent)] cursor-pointer"
-                    />
-                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
-                      Apply Tax / VAT
-                    </span>
-                  </div>
-                  {applyTax && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-semibold text-[var(--muted)]">Rate:</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={taxRate}
-                        onChange={(e) => setTaxRate(e.target.value)}
-                        className="w-14 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2 py-0.5 text-right font-mono text-xs font-bold text-[var(--ink)] focus:border-[var(--accent)] outline-none"
-                      />
-                      <span className="text-xs font-bold text-[var(--muted)]">%</span>
-                    </div>
-                  )}
-                </label>
-
-                {applyTax && (
-                  <div className="mt-2 flex items-center justify-between pt-2 border-t border-[var(--line)] text-xs">
-                    <span className="text-[var(--muted)] font-medium">Tax Amount ({taxRate}%):</span>
-                    <div className="flex items-center gap-1">
-                      <span className="font-mono font-bold text-[var(--accent)]">LKR</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={tax}
-                        onChange={(e) => setTax(e.target.value)}
-                        className="w-28 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2 py-1 text-right font-mono text-xs font-bold text-[var(--ink)] focus:border-[var(--accent)] outline-none"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
               <div className="rounded-xl bg-[var(--accent-soft)] p-4 border border-[var(--accent)]/20 my-1">
                 <p className="text-xs uppercase font-bold tracking-wider text-[var(--muted)]">Grand Total Amount</p>
                 <p className="mt-1 font-mono text-2xl font-black text-[var(--accent)]">
                   LKR {Math.max(0, total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
+                <p className="mt-0.5 text-[11px] text-[var(--muted)]">Including VAT</p>
+              </div>
+
+              {/* VAT breakdown: Total = (Total − VAT) + VAT */}
+              <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3 text-xs shadow-xs">
+                <p className="mb-2 font-bold uppercase tracking-wider text-[var(--ink)]">VAT Breakdown</p>
+                <div className="flex justify-between py-0.5 text-[var(--muted)]">
+                  <span>Value of supply (excl. VAT)</span>
+                  <span className="font-mono font-semibold text-[var(--ink)]">{money(valueOfSupply)}</span>
+                </div>
+                <div className="flex justify-between py-0.5 text-[var(--muted)]">
+                  <span>VAT @ {vatRate}%</span>
+                  <span className="font-mono font-semibold text-[var(--ink)]">{money(vatAmount)}</span>
+                </div>
+                <div className="mt-1 flex justify-between border-t border-[var(--line)] pt-1.5 font-bold text-[var(--ink)]">
+                  <span>Total incl. VAT</span>
+                  <span className="font-mono">{money(Math.max(0, total))}</span>
+                </div>
+                {vatRate === 0 && (
+                  <p className="mt-1.5 text-[10px] text-[var(--muted)]">Set the VAT rate in Settings to show VAT on bills.</p>
+                )}
               </div>
 
               <div className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3.5 shadow-xs">

@@ -8,13 +8,17 @@ use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\StockLedger;
+use App\Support\AmountInWords;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class InvoiceController extends Controller
 {
+    public const PAYMENT_MODES = ['cash', 'card', 'bank_transfer', 'cheque', 'credit', 'online'];
+
     public function index(Request $request)
     {
         return Invoice::query()
@@ -51,7 +55,12 @@ class InvoiceController extends Controller
             'vehicle_model' => ['nullable', 'string', 'max:255'],
             'vehicle_year' => ['nullable', 'string', 'max:50'],
             'discount' => ['nullable', 'numeric', 'min:0'],
-            'tax' => ['nullable', 'numeric', 'min:0'],
+            'customer_tin' => ['nullable', 'string', 'max:50'],
+            'customer_address' => ['nullable', 'string', 'max:500'],
+            'delivery_date' => ['nullable', 'date'],
+            'place_of_supply' => ['nullable', 'string', 'max:255'],
+            'payment_mode' => ['nullable', Rule::in(self::PAYMENT_MODES)],
+            'additional_info' => ['nullable', 'string', 'max:1000'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
@@ -108,8 +117,9 @@ class InvoiceController extends Controller
                 fn ($item) => ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0)
             );
             $discount = $data['discount'] ?? 0;
-            $tax = $data['tax'] ?? 0;
-            $total = $subtotal - $discount + $tax;
+            // Selling prices already include VAT: it is broken out of the total, never added on top.
+            $tax = 0;
+            $total = $subtotal - $discount;
             $paidAmount = min($data['paid_amount'] ?? 0, $total);
             $dueAmount = $total - $paidAmount;
 
@@ -131,7 +141,9 @@ class InvoiceController extends Controller
                 'status' => $dueAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'due'),
                 'is_credit' => $data['is_credit'] ?? false,
                 'created_by' => $request->user()->id,
-            ]);
+            ] + $this->taxInvoiceFields($data, (float) Setting::get('tax_rate', 0), $total));
+
+            $this->rememberCustomerTaxDetails($customerId, $data);
 
             foreach ($data['items'] as $item) {
                 $lineTotal = ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0);
@@ -190,7 +202,12 @@ class InvoiceController extends Controller
             'vehicle_model' => ['nullable', 'string', 'max:255'],
             'vehicle_year' => ['nullable', 'string', 'max:50'],
             'discount' => ['nullable', 'numeric', 'min:0'],
-            'tax' => ['nullable', 'numeric', 'min:0'],
+            'customer_tin' => ['nullable', 'string', 'max:50'],
+            'customer_address' => ['nullable', 'string', 'max:500'],
+            'delivery_date' => ['nullable', 'date'],
+            'place_of_supply' => ['nullable', 'string', 'max:255'],
+            'payment_mode' => ['nullable', Rule::in(self::PAYMENT_MODES)],
+            'additional_info' => ['nullable', 'string', 'max:1000'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'exists:products,id'],
@@ -261,8 +278,9 @@ class InvoiceController extends Controller
                 fn ($item) => ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0)
             );
             $discount = $data['discount'] ?? 0;
-            $tax = $data['tax'] ?? 0;
-            $total = $subtotal - $discount + $tax;
+            // Selling prices already include VAT: it is broken out of the total, never added on top.
+            $tax = 0;
+            $total = $subtotal - $discount;
             $paidAmount = min($data['paid_amount'] ?? $invoice->paid_amount, $total);
             $dueAmount = $total - $paidAmount;
             $status = $dueAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'due');
@@ -281,7 +299,9 @@ class InvoiceController extends Controller
                 'paid_amount' => $paidAmount,
                 'due_amount' => $dueAmount,
                 'status' => $status,
-            ]);
+            ] + $this->taxInvoiceFields($data, (float) $invoice->vat_rate, $total));
+
+            $this->rememberCustomerTaxDetails($customerId, $data);
 
             // Create new line items & stock ledger entries
             foreach ($data['items'] as $item) {
@@ -350,24 +370,123 @@ class InvoiceController extends Controller
         return response()->json($invoice->fresh(['items.product', 'customer']));
     }
 
-    public function pdf(Invoice $invoice)
+    /**
+     * Download the bill as PDF: the normal bill, or (?type=vat) the tax invoice.
+     */
+    public function pdf(Request $request, Invoice $invoice)
     {
         $invoice->load(['items.product.brand', 'items.product.vehicleBrand', 'items.product.vehicleModel', 'customer', 'creator:id,name']);
 
+        $isVat = $request->query('type') === 'vat';
         $logoPath = resource_path('images/logo.png');
 
-        $pdf = Pdf::loadView('invoices.pdf', [
+        $pdf = Pdf::loadView($isVat ? 'invoices.vat' : 'invoices.pdf', [
             'invoice' => $invoice,
-            'company' => [
-                'name' => Setting::get('company_name', 'Janatha Motors'),
-                'tagline' => Setting::get('company_tagline', 'We give you the best'),
-            ],
+            'company' => $this->companyDetails(),
+            'vat' => $this->vatBreakdown($invoice),
+            'paymentMode' => $invoice->payment_mode ? ucwords(str_replace('_', ' ', $invoice->payment_mode)) : null,
             'logoDataUri' => file_exists($logoPath)
                 ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath))
                 : null,
         ]);
 
-        return $pdf->download("{$invoice->invoice_no}.pdf");
+        return $pdf->download($isVat ? "{$invoice->invoice_no}-tax-invoice.pdf" : "{$invoice->invoice_no}.pdf");
+    }
+
+    /** Our business details for printed bills (Settings → Business details). */
+    private function companyDetails(): array
+    {
+        return [
+            'name' => Setting::get('company_name', 'Janatha Motors'),
+            'tagline' => Setting::get('company_tagline'),
+            'legal_name' => Setting::get('company_legal_name') ?: Setting::get('company_name', 'Janatha Motors'),
+            'address' => Setting::get('company_address'),
+            'phone' => Setting::get('company_phone'),
+            'whatsapp' => Setting::get('company_whatsapp'),
+            'email' => Setting::get('company_email'),
+            'website' => Setting::get('company_website'),
+            'branches' => Setting::get('company_branches'),
+            'vat_reg_no' => Setting::get('vat_reg_no'),
+            'business_reg_no' => Setting::get('business_reg_no'),
+            'footer_note' => Setting::get('invoice_footer_note'),
+        ];
+    }
+
+    /**
+     * Splits the VAT-inclusive bill into value of supply + VAT, line by line.
+     * Line amounts are nudged by any rounding cent so they add up exactly to the value of supply.
+     */
+    private function vatBreakdown(Invoice $invoice): array
+    {
+        $rate = (float) $invoice->vat_rate;
+        $total = (float) $invoice->total;
+        $vatAmount = (float) $invoice->vat_amount;
+        $supply = round($total - $vatAmount, 2);
+
+        // Older bills had tax added on top, so their line prices are already VAT-exclusive.
+        $factor = (float) $invoice->tax > 0 ? 1 : 1 + $rate / 100;
+
+        $lines = $invoice->items->map(fn ($item) => [
+            'item' => $item,
+            'unit_excl' => round($item->unit_price / $factor, 2),
+            'amount_excl' => round($item->line_total / $factor, 2),
+        ])->values()->all();
+
+        $linesSum = round(array_sum(array_column($lines, 'amount_excl')), 2);
+        $discountExcl = 0.0;
+        if ((float) $invoice->discount > 0) {
+            $discountExcl = round($linesSum - $supply, 2);
+        } elseif ($lines && $linesSum !== $supply) {
+            $last = count($lines) - 1;
+            $lines[$last]['amount_excl'] = round($lines[$last]['amount_excl'] + ($supply - $linesSum), 2);
+        }
+
+        return [
+            'rate' => $rate,
+            'lines' => $lines,
+            'discount_excl' => $discountExcl,
+            'supply' => $supply,
+            'vat_amount' => $vatAmount,
+            'total' => $total,
+            'words' => AmountInWords::rupees($total),
+        ];
+    }
+
+    /**
+     * Purchaser / delivery details plus the VAT contained in a VAT-inclusive total.
+     */
+    private function taxInvoiceFields(array $data, float $vatRate, float $total): array
+    {
+        return [
+            'customer_tin' => $data['customer_tin'] ?? null,
+            'customer_address' => $data['customer_address'] ?? null,
+            'delivery_date' => $data['delivery_date'] ?? now()->toDateString(),
+            'place_of_supply' => $data['place_of_supply'] ?? null,
+            'payment_mode' => $data['payment_mode'] ?? null,
+            'additional_info' => $data['additional_info'] ?? null,
+            'vat_rate' => $vatRate,
+            'vat_amount' => round($total * $vatRate / (100 + $vatRate), 2),
+        ];
+    }
+
+    /** Keep the customer's TIN / address on file the first time a bill supplies them. */
+    private function rememberCustomerTaxDetails(?int $customerId, array $data): void
+    {
+        $customer = $customerId ? Customer::find($customerId) : null;
+        if (! $customer) {
+            return;
+        }
+
+        $updates = [];
+        if (! empty($data['customer_tin']) && empty($customer->tin)) {
+            $updates['tin'] = $data['customer_tin'];
+        }
+        if (! empty($data['customer_address']) && empty($customer->address)) {
+            $updates['address'] = $data['customer_address'];
+        }
+        if ($updates) {
+            $customer->update($updates);
+        }
     }
 
     protected function nextInvoiceNumber(): string

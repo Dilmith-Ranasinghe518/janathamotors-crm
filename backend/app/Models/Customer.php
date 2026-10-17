@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'phone', 'email', 'address', 'vehicle_no', 'opening_balance', 'current_due', 'is_active'])]
+#[Fillable(['name', 'phone', 'tin', 'email', 'address', 'vehicle_no', 'opening_balance', 'current_due', 'is_active'])]
 class Customer extends Model
 {
     protected function casts(): array

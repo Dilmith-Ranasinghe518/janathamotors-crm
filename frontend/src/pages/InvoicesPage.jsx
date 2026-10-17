@@ -73,10 +73,14 @@ export function InvoicesPage() {
 
   const invoices = invoicesQuery.data?.data ?? []
 
-  async function openPdf(inv) {
-    setDownloadingId(inv.id)
+  // type: 'normal' bill or 'vat' tax invoice
+  async function openPdf(inv, type = 'normal') {
+    setDownloadingId(`${inv.id}-${type}`)
     try {
-      const response = await api.get(`/invoices/${inv.id}/pdf`, { responseType: 'blob' })
+      const response = await api.get(`/invoices/${inv.id}/pdf`, {
+        params: { type: type === 'vat' ? 'vat' : undefined },
+        responseType: 'blob',
+      })
       const file = new Blob([response.data], { type: 'application/pdf' })
       const url = URL.createObjectURL(file)
       window.open(url, '_blank')
@@ -232,12 +236,22 @@ export function InvoicesPage() {
 
                       <button
                         onClick={() => openPdf(inv)}
-                        disabled={downloadingId === inv.id}
+                        disabled={downloadingId === `${inv.id}-normal`}
                         className="flex items-center gap-1 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-bold text-[var(--accent-2)] hover:bg-[var(--accent-soft)] transition shadow-2xs disabled:opacity-50"
-                        title="Download PDF"
+                        title="Download bill (PDF)"
                       >
                         <FileDown className="h-3.5 w-3.5" />
-                        <span>{downloadingId === inv.id ? '…' : 'PDF'}</span>
+                        <span>{downloadingId === `${inv.id}-normal` ? '…' : 'PDF'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => openPdf(inv, 'vat')}
+                        disabled={downloadingId === `${inv.id}-vat`}
+                        className="flex items-center gap-1 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-bold text-[var(--accent-2)] hover:bg-[var(--accent-soft)] transition shadow-2xs disabled:opacity-50"
+                        title="Download tax invoice / VAT bill (PDF)"
+                      >
+                        <FileDown className="h-3.5 w-3.5" />
+                        <span>{downloadingId === `${inv.id}-vat` ? '…' : 'VAT Bill'}</span>
                       </button>
 
                       <Link

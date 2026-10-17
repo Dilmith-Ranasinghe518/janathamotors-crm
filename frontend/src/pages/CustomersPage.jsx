@@ -5,7 +5,7 @@ import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 
-const emptyForm = { name: '', phone: '', email: '', address: '', vehicle_no: '', opening_balance: '0' }
+const emptyForm = { name: '', phone: '', tin: '', email: '', address: '', vehicle_no: '', opening_balance: '0' }
 
 export function CustomersPage() {
   const { can } = useAuth()
@@ -50,6 +50,7 @@ export function CustomersPage() {
       phone: customer.phone ?? '',
       email: customer.email ?? '',
       address: customer.address ?? '',
+      tin: customer.tin ?? '',
       vehicle_no: customer.vehicle_no ?? '',
       opening_balance: customer.opening_balance,
     })
@@ -136,6 +137,7 @@ export function CustomersPage() {
             <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             <Input label="Vehicle no." value={form.vehicle_no} onChange={(e) => setForm({ ...form, vehicle_no: e.target.value })} />
+            <Input label="TIN / VAT no." className="col-span-2" value={form.tin} onChange={(e) => setForm({ ...form, tin: e.target.value })} />
             <Input label="Address" className="col-span-2" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
             {!editing && (
               <Input
