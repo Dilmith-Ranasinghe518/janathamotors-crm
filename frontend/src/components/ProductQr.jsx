@@ -45,6 +45,7 @@ export function ProductQrModal({ product, onClose }) {
       <div class="label">
         ${svgMarkup()}
         <div class="no">${escapeHtml(product.item_no)}</div>
+        ${product.item_code ? `<div class="meta">Code: ${escapeHtml(product.item_code)}</div>` : ''}
         ${product.part_no ? `<div class="meta">Part No: ${escapeHtml(product.part_no)}</div>` : ''}
         <div class="meta">${escapeHtml(product.name)}</div>
       </div>
@@ -73,6 +74,9 @@ export function ProductQrModal({ product, onClose }) {
           <div className="font-mono text-sm font-bold text-[var(--ink)]">{product.item_no}</div>
           {product.part_no && <div className="text-xs text-[var(--muted)]">Part No: {product.part_no}</div>}
           {product.item_code && <div className="text-xs text-[var(--muted)]">Item Code: {product.item_code}</div>}
+          {product.created_at && (
+            <div className="text-xs text-[var(--muted)]">Added: {new Date(product.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+          )}
           <div className="mt-1 text-sm text-[var(--ink)]">{product.name}</div>
         </div>
         <div className="flex w-full justify-end gap-2 border-t border-[var(--line)] pt-3">

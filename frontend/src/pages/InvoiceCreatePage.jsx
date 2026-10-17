@@ -200,6 +200,7 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
                 <span className="font-bold text-[var(--ink)]">{product.name}</span>
                 <span className="text-xs text-[var(--muted)]">
                   Item No: <strong className="font-mono text-[var(--ink)]">{product.item_no}</strong>
+                  {product.item_code && <> • Code: <strong className="font-mono text-[var(--ink)]">{product.item_code}</strong></>}
                   {product.part_no && <> • Part No: <strong className="font-mono text-[var(--ink)]">{product.part_no}</strong></>}
                   {product.brand && ` • Brand: ${product.brand.name}`}
                 </span>

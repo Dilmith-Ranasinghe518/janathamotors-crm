@@ -8,11 +8,29 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'item_no', 'part_no', 'item_code', 'name', 'category_id', 'brand_id', 'store_id', 'shelf_location', 'vehicle_brand_id', 'vehicle_model_id', 'compatible_models',
+    'part_no', 'item_code', 'name', 'category_id', 'brand_id', 'store_id', 'shelf_location', 'vehicle_brand_id', 'vehicle_model_id', 'compatible_models',
     'cost_price', 'selling_price', 'unit', 'reorder_level', 'is_active',
 ])]
 class Product extends Model
 {
+    /**
+     * Item No is assigned by the system from the row id once the product is saved.
+     */
+    public static function systemItemNo(int $id): string
+    {
+        return sprintf('JM-%06d', $id);
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (Product $product) {
+            if (! $product->item_no) {
+                $product->item_no = static::systemItemNo($product->id);
+                $product->saveQuietly();
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

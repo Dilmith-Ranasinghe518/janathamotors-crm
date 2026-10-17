@@ -80,9 +80,8 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'item_no' => ['required', 'string', 'max:100', 'unique:products,item_no'],
+            'item_code' => ['required', 'string', 'max:100', 'unique:products,item_code'],
             'part_no' => ['nullable', 'string', 'max:100'],
-            'item_code' => ['nullable', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'brand_id' => ['nullable', 'exists:brands,id'],
@@ -115,9 +114,8 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $data = $request->validate([
-            'item_no' => ['required', 'string', 'max:100', 'unique:products,item_no,'.$product->id],
+            'item_code' => ['required', 'string', 'max:100', 'unique:products,item_code,'.$product->id],
             'part_no' => ['nullable', 'string', 'max:100'],
-            'item_code' => ['nullable', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'exists:categories,id'],
             'brand_id' => ['nullable', 'exists:brands,id'],
@@ -206,6 +204,7 @@ class ProductController extends Controller
                 'Current Stock',
                 'Reorder Level',
                 'Unit',
+                'Added Date',
             ]);
 
             foreach ($products as $p) {
@@ -226,6 +225,7 @@ class ProductController extends Controller
                     (int) ($p->stock_on_hand ?? 0),
                     $p->reorder_level,
                     $p->unit ?? 'pc',
+                    $p->created_at?->format('Y-m-d'),
                 ]);
             }
 
@@ -249,9 +249,8 @@ class ProductController extends Controller
             fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
 
             fputcsv($file, [
-                'Item No',
-                'Part No',
                 'Item Code',
+                'Part No',
                 'Name',
                 'Brand',
                 'Category',
@@ -270,7 +269,6 @@ class ProductController extends Controller
             fputcsv($file, [
                 'AF-PER-AXIA',
                 '17801-B2050',
-                'AF001',
                 'Air Filter - Perodua Axia 1.0',
                 'Denso',
                 'Filters',
@@ -289,7 +287,6 @@ class ProductController extends Controller
             fputcsv($file, [
                 'BP-BOSCH-BEZ',
                 '0986AB1234',
-                'BP001',
                 'Front Brake Pads - Perodua Bezza',
                 'Bosch',
                 'Brakes',
@@ -342,11 +339,11 @@ class ProductController extends Controller
             $clean = strtolower(trim(preg_replace('/[^a-zA-Z0-9_]/', '_', (string) $col)));
             $clean = trim($clean, '_');
 
-            if (in_array($clean, ['item_no', 'item_number', 'sku'])) {
+            if (in_array($clean, ['item_no', 'item_number'])) {
                 $columnMap['item_no'] = $index;
             } elseif (in_array($clean, ['part_no', 'part_number', 'oem_no', 'oem_number'])) {
                 $columnMap['part_no'] = $index;
-            } elseif (in_array($clean, ['item_code', 'code'])) {
+            } elseif (in_array($clean, ['item_code', 'code', 'sku'])) {
                 $columnMap['item_code'] = $index;
             } elseif (in_array($clean, ['name', 'product_name', 'item_name', 'title'])) {
                 $columnMap['name'] = $index;
@@ -377,10 +374,10 @@ class ProductController extends Controller
             }
         }
 
-        if (! isset($columnMap['item_no']) || ! isset($columnMap['name'])) {
+        if (! isset($columnMap['item_code']) || ! isset($columnMap['name'])) {
             fclose($handle);
             return response()->json([
-                'message' => "Invalid CSV format: The file must contain at least 'Item No' and 'Name' columns.",
+                'message' => "Invalid CSV format: The file must contain at least 'Item Code' and 'Name' columns.",
             ], 422);
         }
 
@@ -409,19 +406,19 @@ class ProductController extends Controller
                 continue;
             }
 
-            $itemNo = isset($row[$columnMap['item_no']]) ? trim((string) $row[$columnMap['item_no']]) : '';
+            $itemNo = isset($columnMap['item_no']) ? trim((string) ($row[$columnMap['item_no']] ?? '')) : '';
             $partNo = isset($columnMap['part_no']) ? trim((string) ($row[$columnMap['part_no']] ?? '')) : '';
-            $itemCode = isset($columnMap['item_code']) ? trim((string) ($row[$columnMap['item_code']] ?? '')) : '';
+            $itemCode = trim((string) ($row[$columnMap['item_code']] ?? ''));
             $name = isset($columnMap['name']) && isset($row[$columnMap['name']]) ? trim((string) $row[$columnMap['name']]) : '';
 
-            if ($itemNo === '') {
-                $errors[] = "Row {$rowNumber}: Missing Item No. Row skipped.";
+            if ($itemCode === '') {
+                $errors[] = "Row {$rowNumber}: Missing Item Code. Row skipped.";
                 $skipped++;
                 continue;
             }
 
             if (empty($name)) {
-                $errors[] = "Row {$rowNumber} (Item No {$itemNo}): Missing product name. Row skipped.";
+                $errors[] = "Row {$rowNumber} (Item Code {$itemCode}): Missing product name. Row skipped.";
                 $skipped++;
                 continue;
             }
@@ -514,7 +511,9 @@ class ProductController extends Controller
             $stockSpecified = isset($columnMap['stock']) && is_numeric(trim((string) ($row[$columnMap['stock']] ?? '')));
             $targetStock = $stockSpecified ? (int) trim((string) $row[$columnMap['stock']]) : 0;
 
-            $product = Product::where('item_no', $itemNo)->first();
+            // Match on Item Code; the system Item No (from an earlier export) also works.
+            $product = Product::where('item_code', $itemCode)->first()
+                ?? ($itemNo !== '' ? Product::where('item_no', $itemNo)->first() : null);
 
             if ($product) {
                 if (! $updateExisting) {
@@ -524,7 +523,7 @@ class ProductController extends Controller
 
                 $product->update([
                     'part_no' => $partNo !== '' ? $partNo : $product->part_no,
-                    'item_code' => $itemCode !== '' ? $itemCode : $product->item_code,
+                    'item_code' => $itemCode,
                     'name' => $name,
                     'category_id' => $categoryId ?? $product->category_id,
                     'brand_id' => $brandId ?? $product->brand_id,
@@ -557,9 +556,8 @@ class ProductController extends Controller
                 $updated++;
             } else {
                 $newProduct = Product::create([
-                    'item_no' => $itemNo,
                     'part_no' => $partNo !== '' ? $partNo : null,
-                    'item_code' => $itemCode !== '' ? $itemCode : null,
+                    'item_code' => $itemCode,
                     'name' => $name,
                     'category_id' => $categoryId,
                     'brand_id' => $brandId,

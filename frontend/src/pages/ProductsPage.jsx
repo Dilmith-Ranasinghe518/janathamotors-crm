@@ -18,8 +18,11 @@ import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../c
 import { useAuth } from '../context/AuthContext'
 import { ProductQrModal, ProductQrThumb, printQrSheet } from '../components/ProductQr'
 
+function formatDate(value) {
+  return value ? new Date(value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+}
+
 const emptyForm = {
-  item_no: '',
   part_no: '',
   item_code: '',
   name: '',
@@ -126,7 +129,6 @@ export function ProductsPage() {
   function openEdit(product) {
     setEditing(product)
     setForm({
-      item_no: product.item_no,
       part_no: product.part_no ?? '',
       item_code: product.item_code ?? '',
       name: product.name,
@@ -414,7 +416,7 @@ export function ProductsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)] bg-[var(--paper)]/50">
-                <th className="px-4 py-3 whitespace-nowrap">Item / Part No</th>
+                <th className="px-4 py-3 whitespace-nowrap">Item No / Code</th>
                 <th className="px-4 py-3 whitespace-nowrap">QR</th>
                 <th className="px-4 py-3 whitespace-nowrap">Name & Brand</th>
                 <th className="px-4 py-3 whitespace-nowrap">Store Location</th>
@@ -422,6 +424,7 @@ export function ProductsPage() {
                 <th className="px-4 py-3 text-right whitespace-nowrap">Stock</th>
                 <th className="px-4 py-3 text-right whitespace-nowrap">Cost</th>
                 <th className="px-4 py-3 text-right whitespace-nowrap">Price</th>
+                <th className="px-4 py-3 whitespace-nowrap">Added</th>
                 <th className="px-4 py-3 whitespace-nowrap text-right">Actions</th>
               </tr>
             </thead>
@@ -429,9 +432,9 @@ export function ProductsPage() {
               {products.map((p) => (
                 <tr key={p.id} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)]/40 transition">
                   <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap">
-                    <div className="font-semibold text-[var(--ink)]">{p.item_no}</div>
+                    <div className="text-[var(--muted)]">{p.item_no}</div>
+                    {p.item_code && <div className="font-semibold text-[var(--ink)]">{p.item_code}</div>}
                     {p.part_no && <div className="text-[var(--muted)]">Part: {p.part_no}</div>}
-                    {p.item_code && <div className="text-[var(--muted)]">Code: {p.item_code}</div>}
                   </td>
                   <td className="px-4 py-3.5">
                     <ProductQrThumb product={p} onClick={() => setQrProduct(p)} />
@@ -485,6 +488,7 @@ export function ProductsPage() {
                   <td className="px-4 py-3.5 text-right tabular-nums font-bold text-sm">{p.stock_on_hand}</td>
                   <td className="px-4 py-3.5 text-right tabular-nums text-xs">{Number(p.cost_price).toFixed(2)}</td>
                   <td className="px-4 py-3.5 text-right tabular-nums font-semibold text-xs text-[var(--ink)]">{Number(p.selling_price).toFixed(2)}</td>
+                  <td className="px-4 py-3.5 text-xs whitespace-nowrap text-[var(--muted)]">{formatDate(p.created_at)}</td>
                   <td className="px-4 py-3.5 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-3 text-xs font-semibold">
                       {can('manage_stock') && (
@@ -520,10 +524,15 @@ export function ProductsPage() {
       {formOpen && (
         <Modal title={editing ? 'Edit product' : 'New product'} onClose={closeForm} wide>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-            <Input label="Item No" required value={form.item_no} onChange={(e) => setForm({ ...form, item_no: e.target.value })} />
+            <Input label="Item Code" required placeholder="Your code for this item" value={form.item_code} onChange={(e) => setForm({ ...form, item_code: e.target.value })} />
             <Input label="Item Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Input label="Part No" placeholder="Manufacturer / OEM part number" value={form.part_no} onChange={(e) => setForm({ ...form, part_no: e.target.value })} />
-            <Input label="Item Code" value={form.item_code} onChange={(e) => setForm({ ...form, item_code: e.target.value })} />
+            <Input
+              label="Item No (system)"
+              value={editing ? `${editing.item_no} · added ${formatDate(editing.created_at)}` : 'Auto-generated on save'}
+              disabled
+              className="opacity-70"
+            />
             
             <Select
               label={
@@ -758,7 +767,7 @@ export function ProductsPage() {
                   onChange={(e) => setUpdateExisting(e.target.checked)}
                   className="rounded border-[var(--line)]"
                 />
-                <span>Update product details if Item No already exists</span>
+                <span>Update product details if Item Code already exists</span>
               </label>
 
               {importError && (
