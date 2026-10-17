@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\PurchaseController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
@@ -31,6 +32,7 @@ Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
     Route::put('/user/password', [AuthController::class, 'updatePassword']);
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('permission:view_dashboard');
+    Route::get('/reports/{type}', [ReportController::class, 'show'])->middleware('permission:view_reports');
 
     Route::apiResource('categories', CategoryController::class)->middleware('permission:manage_products');
     Route::apiResource('brands', BrandController::class)->middleware('permission:manage_products');

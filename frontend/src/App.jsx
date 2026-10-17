@@ -21,6 +21,7 @@ import { StoresPage } from './pages/StoresPage'
 import { StockTransfersPage } from './pages/StockTransfersPage'
 import { ShipmentsPage } from './pages/ShipmentsPage'
 import { WhatsappOrdersPage } from './pages/WhatsappOrdersPage'
+import { ReportsPage } from './pages/ReportsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -76,6 +77,10 @@ export default function App() {
 
                   <Route element={<ProtectedRoute permission="manage_stock" />}>
                     <Route path="/stock-transfers" element={<StockTransfersPage />} />
+                  </Route>
+
+                  <Route element={<ProtectedRoute permission="view_reports" />}>
+                    <Route path="/reports" element={<ReportsPage />} />
                   </Route>
 
                   <Route element={<ProtectedRoute permission="manage_orders" />}>
