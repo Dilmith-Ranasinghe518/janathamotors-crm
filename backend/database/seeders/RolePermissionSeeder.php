@@ -27,6 +27,7 @@ class RolePermissionSeeder extends Seeder
             'apply_discount_over_limit',
             'manage_customers',
             'manage_stores',
+            'manage_shipments',
         ];
 
         foreach ($permissions as $permission) {
@@ -48,6 +49,7 @@ class RolePermissionSeeder extends Seeder
             'apply_discount_over_limit',
             'manage_customers',
             'manage_stores',
+            'manage_shipments',
         ]);
 
         $cashier = Role::firstOrCreate(['name' => 'Cashier', 'guard_name' => 'web']);
@@ -65,6 +67,7 @@ class RolePermissionSeeder extends Seeder
             'manage_stock',
             'manage_suppliers',
             'manage_stores',
+            'manage_shipments',
         ]);
     }
 }

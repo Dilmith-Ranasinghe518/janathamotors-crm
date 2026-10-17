@@ -13,7 +13,7 @@ class SupplierController extends Controller
         return Supplier::query()
             ->when($request->string('search')->isNotEmpty(), fn ($q) => $q->where('name', 'like', '%'.$request->string('search').'%'))
             ->orderBy('name')
-            ->paginate(20);
+            ->paginate(min(max($request->integer('per_page', 20), 1), 500));
     }
 
     public function store(Request $request)

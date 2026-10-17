@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PurchaseController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\ShipmentController;
 use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\StockTransferController;
 use App\Http\Controllers\Api\StoreController;
@@ -43,6 +44,9 @@ Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
     Route::post('/products/{product}/adjust-stock', [StockController::class, 'adjust'])->middleware('permission:manage_stock');
     Route::get('/stock-ledger', [StockController::class, 'index'])->middleware('permission:manage_stock');
     Route::apiResource('stock-transfers', StockTransferController::class)->only(['index', 'store', 'show'])->middleware('permission:manage_stock');
+
+    Route::patch('/shipments/{shipment}/move', [ShipmentController::class, 'move'])->middleware('permission:manage_shipments');
+    Route::apiResource('shipments', ShipmentController::class)->middleware('permission:manage_shipments');
 
     Route::apiResource('suppliers', SupplierController::class)->middleware('permission:manage_suppliers');
     Route::apiResource('purchases', PurchaseController::class)->only(['index', 'store', 'show'])->middleware('permission:manage_suppliers');
