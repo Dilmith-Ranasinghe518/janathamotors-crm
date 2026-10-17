@@ -14,14 +14,28 @@ use Illuminate\Support\Facades\DB;
 ])]
 class Product extends Model
 {
-    /** System Item Numbers run 4400, 4401, 4402, … */
-    public const FIRST_ITEM_NO = 4400;
+    /** System Item Numbers run 1, 2, 3, … */
+    public const FIRST_ITEM_NO = 1;
+
+    /** Auto-assigned Item Codes run 4400, 4401, … (staff may also type their own). */
+    public const FIRST_ITEM_CODE = 4400;
 
     public static function nextItemNo(): string
     {
-        $max = static::query()->whereRaw("item_no REGEXP '^[0-9]+$'")->max(DB::raw('CAST(item_no AS UNSIGNED)'));
+        return static::nextNumber('item_no', static::FIRST_ITEM_NO);
+    }
 
-        return (string) max((int) $max + 1, static::FIRST_ITEM_NO);
+    public static function nextItemCode(): string
+    {
+        return static::nextNumber('item_code', static::FIRST_ITEM_CODE);
+    }
+
+    /** One more than the highest purely numeric value in the column, never below $first. */
+    private static function nextNumber(string $column, int $first): string
+    {
+        $max = static::query()->whereRaw("{$column} REGEXP '^[0-9]+$'")->max(DB::raw("CAST({$column} AS UNSIGNED)"));
+
+        return (string) max((int) $max + 1, $first);
     }
 
     protected static function booted(): void
@@ -29,6 +43,9 @@ class Product extends Model
         static::creating(function (Product $product) {
             if (! $product->item_no) {
                 $product->item_no = static::nextItemNo();
+            }
+            if (! $product->item_code) {
+                $product->item_code = static::nextItemCode();
             }
         });
     }

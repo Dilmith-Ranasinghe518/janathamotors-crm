@@ -131,6 +131,11 @@ class ProductController extends Controller
             'is_active' => ['boolean'],
         ]);
 
+        // A blank Item Code keeps the current one rather than clearing it.
+        if (blank($data['item_code'] ?? null)) {
+            unset($data['item_code']);
+        }
+
         $product->update($data);
 
         return $product->load(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel']);
