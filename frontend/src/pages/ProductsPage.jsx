@@ -17,6 +17,7 @@ import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { ProductQrModal, ProductQrThumb, printQrSheet } from '../components/ProductQr'
+import { codeFromQr } from '../lib/qr'
 
 function formatDate(value) {
   return value ? new Date(value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
@@ -364,7 +365,7 @@ export function ProductsPage() {
           <Input
             placeholder="Search by name, item no, part no, item code, brand, or vehicle…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => setSearch(codeFromQr(e.target.value))}
           />
         </div>
 

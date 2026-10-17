@@ -3,9 +3,11 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { QRCodeSVG } from 'qrcode.react'
 import { Download, Printer } from 'lucide-react'
 import { Button, Modal } from './ui'
+import { qrPayload } from '../lib/qr'
 
 /**
- * The QR payload is the Item No, so a scanner "types" it straight into any product search box.
+ * The QR carries Item Code, Item Name, Store and Store location (see qrPayload); scan inputs
+ * extract the Item Code from it with codeFromQr.
  */
 export function ProductQrThumb({ product, onClick }) {
   return (
@@ -15,7 +17,7 @@ export function ProductQrThumb({ product, onClick }) {
       title="View / print QR label"
       className="rounded-md border border-[var(--line)] bg-white p-1 transition hover:border-[var(--accent)] hover:shadow-sm"
     >
-      <QRCodeSVG value={product.item_no} size={40} level="M" />
+      <QRCodeSVG value={qrPayload(product)} size={40} level="L" />
     </button>
   )
 }
@@ -34,7 +36,7 @@ export function ProductQrModal({ product, onClose }) {
   function handlePrint() {
     const win = window.open('', '_blank', 'width=400,height=500')
     if (!win) return
-    win.document.write(`<!doctype html><html><head><title>${escapeHtml(product.item_no)}</title>
+    win.document.write(`<!doctype html><html><head><title>${escapeHtml(product.item_code || product.item_no)}</title>
       <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 16px; text-align: center; }
         .label { display: inline-block; border: 1px dashed #999; padding: 12px; }
@@ -44,10 +46,10 @@ export function ProductQrModal({ product, onClose }) {
       </style></head><body>
       <div class="label">
         ${svgMarkup()}
-        <div class="no">${escapeHtml(product.item_no)}</div>
-        ${product.item_code ? `<div class="meta">Code: ${escapeHtml(product.item_code)}</div>` : ''}
-        ${product.part_no ? `<div class="meta">Part No: ${escapeHtml(product.part_no)}</div>` : ''}
-        <div class="meta">${escapeHtml(product.name)}</div>
+        <div class="no">${escapeHtml(product.item_code || product.item_no)}</div>
+        <div class="meta"><b>${escapeHtml(product.name)}</b></div>
+        ${product.store ? `<div class="meta">${escapeHtml(product.store.name)} (${escapeHtml(product.store.code)})</div>` : ''}
+        ${product.shelf_location ? `<div class="meta">Location: ${escapeHtml(product.shelf_location)}</div>` : ''}
       </div>
       <script>window.onload = () => { window.print(); window.close(); }</script>
       </body></html>`)
@@ -59,7 +61,7 @@ export function ProductQrModal({ product, onClose }) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `qr-${product.item_no}.svg`
+    a.download = `qr-${product.item_code || product.item_no}.svg`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -68,16 +70,21 @@ export function ProductQrModal({ product, onClose }) {
     <Modal title="Part QR code" onClose={onClose}>
       <div className="flex flex-col items-center gap-3">
         <div ref={svgWrapRef} className="rounded-xl border border-[var(--line)] bg-white p-4">
-          <QRCodeSVG value={product.item_no} size={200} level="M" marginSize={1} />
+          <QRCodeSVG value={qrPayload(product)} size={220} level="M" marginSize={1} />
         </div>
         <div className="text-center">
-          <div className="font-mono text-sm font-bold text-[var(--ink)]">{product.item_no}</div>
-          {product.part_no && <div className="text-xs text-[var(--muted)]">Part No: {product.part_no}</div>}
-          {product.item_code && <div className="text-xs text-[var(--muted)]">Item Code: {product.item_code}</div>}
-          {product.created_at && (
-            <div className="text-xs text-[var(--muted)]">Added: {new Date(product.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-          )}
-          <div className="mt-1 text-sm text-[var(--ink)]">{product.name}</div>
+          <div className="text-xs text-[var(--muted)]">Item Code</div>
+          <div className="font-mono text-lg font-bold text-[var(--ink)]">{product.item_code || product.item_no}</div>
+          <div className="mt-1 text-sm font-semibold text-[var(--ink)]">{product.name}</div>
+          <div className="mt-1 text-xs text-[var(--muted)]">
+            Store: <span className="text-[var(--ink)]">{product.store ? `${product.store.name} (${product.store.code})` : '—'}</span>
+          </div>
+          <div className="text-xs text-[var(--muted)]">
+            Location: <span className="text-[var(--ink)]">{product.shelf_location || '—'}</span>
+          </div>
+          <div className="mt-1 text-[11px] text-[var(--muted)]">
+            Item No {product.item_no}{product.part_no ? ` · Part No ${product.part_no}` : ''}
+          </div>
         </div>
         <div className="flex w-full justify-end gap-2 border-t border-[var(--line)] pt-3">
           <Button type="button" variant="secondary" onClick={handleDownload}>
@@ -101,7 +108,7 @@ function escapeSheetHtml(text) {
 
 /**
  * Opens a print-ready A4 sheet packing SHEET_COLS × SHEET_ROWS QR labels per page
- * (Item No + store / shelf location). Use the browser's "Save as PDF" to export.
+ * (Item Code, name, store / shelf location). Use the browser's "Save as PDF" to export.
  * `win` must be opened synchronously in the click handler, or pop-up blockers stop it.
  */
 export function printQrSheet(products, win) {
@@ -113,9 +120,9 @@ export function printQrSheet(products, win) {
     .map(
       (page) => `<section class="page">${page
         .map((p) => {
-          const svg = renderToStaticMarkup(<QRCodeSVG value={p.item_no} size={256} level="M" marginSize={0} />)
+          const svg = renderToStaticMarkup(<QRCodeSVG value={qrPayload(p)} size={256} level="L" marginSize={0} />)
           const location = [p.store?.code, p.shelf_location].filter(Boolean).join(' · ')
-          return `<div class="cell">${svg}<div class="no">${escapeSheetHtml(p.item_no)}</div><div class="loc">${escapeSheetHtml(location || '—')}</div></div>`
+          return `<div class="cell">${svg}<div class="no">${escapeSheetHtml(p.item_code || p.item_no)}</div><div class="name">${escapeSheetHtml(p.name)}</div><div class="loc">${escapeSheetHtml(location || '—')}</div></div>`
         })
         .join('')}</section>`
     )
@@ -131,8 +138,9 @@ export function printQrSheet(products, win) {
               width: 198mm; break-after: page; page-break-after: always; }
       .page:last-child { break-after: auto; page-break-after: auto; }
       .cell { border: 0.2mm dashed #bbb; padding: 1.2mm; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-      .cell svg { width: 21mm; height: 21mm; }
+      .cell svg { width: 20mm; height: 20mm; }
       .no { font-family: monospace; font-weight: bold; font-size: 7pt; margin-top: 0.8mm; text-align: center; word-break: break-all; line-height: 1.1; }
+      .name { font-size: 5.5pt; text-align: center; line-height: 1.1; max-height: 2.2em; overflow: hidden; }
       .loc { font-size: 6pt; color: #333; text-align: center; line-height: 1.1; word-break: break-word; }
       @media screen { body { background: #eee; } .page { background: #fff; margin: 8mm auto; padding: 6mm; width: 210mm; box-shadow: 0 1px 4px rgba(0,0,0,.2); } }
     </style></head><body>${pagesHtml}

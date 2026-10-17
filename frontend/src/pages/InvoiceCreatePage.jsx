@@ -18,6 +18,7 @@ import {
   MapPin,
 } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
+import { codeFromQr } from '../lib/qr'
 import { Button, Card, PageHeader } from '../components/ui'
 
 const blankLine = { product_id: '', product_name: '', product_data: null, quantity: 1, unit_price: '', discount: 0 }
@@ -124,6 +125,11 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
 
   const filteredProducts = useMemo(() => {
     if (!query.trim() || line.product_id) return []
+    const scanned = codeFromQr(query)
+    if (scanned !== query) {
+      // A scanned QR label: match its Item Code exactly.
+      return products.filter((p) => p.item_code?.toLowerCase() === scanned.toLowerCase())
+    }
     const q = query.toLowerCase()
     return products
       .filter(

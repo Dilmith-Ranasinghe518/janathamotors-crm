@@ -5,6 +5,7 @@ import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { QrScanBar } from '../components/QrScanner'
+import { codeFromQr } from '../lib/qr'
 
 const blankLine = { product_id: '', quantity: 1, notes: '' }
 
@@ -93,10 +94,10 @@ export function StockTransfersPage() {
 
   // A scan adds the product as a line, or bumps the quantity if it is already listed.
   function handleScan(code) {
-    const needle = code.trim().toLowerCase()
+    const needle = String(codeFromQr(code)).trim().toLowerCase()
     const product =
-      products.find((p) => p.item_no?.toLowerCase() === needle) ||
-      products.find((p) => p.part_no?.toLowerCase() === needle || p.item_code?.toLowerCase() === needle)
+      products.find((p) => p.item_code?.toLowerCase() === needle) ||
+      products.find((p) => p.item_no?.toLowerCase() === needle || p.part_no?.toLowerCase() === needle)
 
     if (!product) {
       setScanMessage({ ok: false, text: `No product found for "${code}".` })
@@ -114,7 +115,7 @@ export function StockTransfersPage() {
     } else {
       setLines([...lines, { ...blankLine, product_id: String(product.id) }])
     }
-    setScanMessage({ ok: true, text: `✓ ${product.item_no} — ${product.name} (qty ${newQty})` })
+    setScanMessage({ ok: true, text: `✓ ${product.item_code || product.item_no} — ${product.name} (qty ${newQty})` })
   }
 
   function removeLine(index) {
