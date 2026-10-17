@@ -5,6 +5,7 @@ import { AlertTriangle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Input } from '../components/ui'
+import { SoftwareCredit } from '../components/SoftwareCredit'
 import logo from '../assets/logo.webp'
 
 export function LoginPage() {
@@ -89,6 +90,10 @@ export function LoginPage() {
             {submitting ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
+
+        <div className="mt-6 flex justify-center border-t border-[var(--line)] pt-4">
+          <SoftwareCredit />
+        </div>
       </div>
     </div>
   )

@@ -30,6 +30,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { api } from '../lib/api'
 import logo from '../assets/logo.webp'
+import { SoftwareCredit } from './SoftwareCredit'
 
 const NAV = [
   { to: '/', label: 'Dashboard', permission: 'view_dashboard', icon: LayoutDashboard, end: true },
@@ -214,6 +215,9 @@ export function AppShell() {
               </button>
             </div>
           )}
+          <div className={clsx('mt-3 flex', collapsed ? 'justify-center' : '')}>
+            <SoftwareCredit compact={collapsed} />
+          </div>
         </div>
       </aside>
 
@@ -287,6 +291,7 @@ export function AppShell() {
             <span>Logout</span>
           </button>
         </div>
+        <SoftwareCredit className="mt-3" />
       </aside>
 
       {/* Main Content Area */}
