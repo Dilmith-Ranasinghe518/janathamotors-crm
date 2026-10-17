@@ -16,26 +16,26 @@
 <head>
 <meta charset="utf-8">
 <style>
-    @page { margin: 22px 26px; }
+    @page { margin: 12px 26px 22px; }
     body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #1f2937; line-height: 1.35; }
     table { border-collapse: collapse; }
 
-    .head { width: 100%; margin: 2px 0 0; }
-    .head-rule { border-top: 1.5px solid #1f2a5a; margin: 8px 0 4px; }
-    .logo-cell { width: 102px; vertical-align: middle; padding-right: 8px; }
-    .logo { max-height: 92px; max-width: 100px; }
-    .name-cell { vertical-align: middle; }
-    .co-name { font-size: 41px; font-weight: bold; color: #1f2a5a; margin: 0; letter-spacing: -0.2px; white-space: nowrap; }
-    .info-cell { text-align: center; padding-top: 4px; }
-    .co-line { font-size: 11px; color: #1f2937; margin-top: 2px; font-weight: bold; }
-    .info-line { margin: 2px auto 0; }
-    .info-line td { vertical-align: middle; padding: 0; font-size: 11px; font-weight: bold; color: #1f2937; white-space: nowrap; }
+    .head { width: 100%; margin: 0; }
+    .head-rule { border-top: 1.5px solid #1f2a5a; margin: 5px 0 2px; }
+    .logo-cell { width: 82px; vertical-align: middle; padding: 0 8px 0 0; }
+    .logo { max-height: 70px; max-width: 80px; display: block; }
+    .name-cell { vertical-align: middle; padding: 0; }
+    .co-name { font-size: 41px; font-weight: bold; color: #1f2a5a; margin: 0; line-height: 1; letter-spacing: -0.2px; white-space: nowrap; }
+    .info-cell { text-align: center; padding: 0; }
+    .co-line { font-size: 11px; line-height: 1.25; color: #1f2937; margin-top: 1px; font-weight: bold; }
+    .info-line { margin: 1px auto 0; }
+    .info-line td { vertical-align: middle; padding: 0; font-size: 11px; line-height: 1.25; font-weight: bold; color: #1f2937; white-space: nowrap; }
     .info-line .i { width: 13px; padding-right: 4px; }
     .info-line .i img { width: 11px; height: 11px; display: block; }
     .info-line .sp { width: 14px; }
-    .co-tag { font-size: 12.5px; font-weight: bold; color: #c2410c; margin-top: 3px; }
+    .co-tag { font-size: 12.5px; line-height: 1.2; font-weight: bold; color: #c2410c; margin-top: 2px; }
 
-    .title { text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; color: #111827; margin: 6px 0 8px; }
+    .title { text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; color: #111827; margin: 4px 0 6px; }
     .status { text-align: center; margin: -4px 0 8px; font-size: 8.5px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
     .status span { padding: 2px 8px; border-radius: 8px; }
     .status-paid { background: #dcfce7; color: #15803d; }
