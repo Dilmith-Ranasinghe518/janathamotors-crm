@@ -416,7 +416,9 @@ export function ProductsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)] bg-[var(--paper)]/50">
-                <th className="px-4 py-3 whitespace-nowrap">Item No / Code</th>
+                <th className="px-4 py-3 whitespace-nowrap">Item No</th>
+                <th className="px-4 py-3 whitespace-nowrap">Item Code</th>
+                <th className="px-4 py-3 whitespace-nowrap">Part No</th>
                 <th className="px-4 py-3 whitespace-nowrap">QR</th>
                 <th className="px-4 py-3 whitespace-nowrap">Name & Brand</th>
                 <th className="px-4 py-3 whitespace-nowrap">Store Location</th>
@@ -431,11 +433,9 @@ export function ProductsPage() {
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)]/40 transition">
-                  <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap">
-                    <div className="text-[var(--muted)]">{p.item_no}</div>
-                    {p.item_code && <div className="font-semibold text-[var(--ink)]">{p.item_code}</div>}
-                    {p.part_no && <div className="text-[var(--muted)]">Part: {p.part_no}</div>}
-                  </td>
+                  <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap text-[var(--muted)]">{p.item_no}</td>
+                  <td className="px-4 py-3.5 font-mono text-xs font-semibold whitespace-nowrap text-[var(--ink)]">{p.item_code || '—'}</td>
+                  <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap text-[var(--ink)]">{p.part_no || <span className="text-[var(--muted)]">—</span>}</td>
                   <td className="px-4 py-3.5">
                     <ProductQrThumb product={p} onClick={() => setQrProduct(p)} />
                   </td>
