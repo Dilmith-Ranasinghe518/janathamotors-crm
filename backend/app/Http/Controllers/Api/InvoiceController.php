@@ -408,12 +408,13 @@ class InvoiceController extends Controller
             "<svg xmlns='http://www.w3.org/2000/svg' viewBox='{$viewBox}'>{$body}</svg>"
         );
 
+        // Built from circles, ellipses and straight shapes only: the PDF renderer draws SVG arcs poorly.
         return [
-            'pin' => $svg("<path fill='{$navy}' d='M12 1a8 8 0 0 0-8 8c0 6 8 14 8 14s8-8 8-14a8 8 0 0 0-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z'/>"),
-            'phone' => $svg("<path fill='{$navy}' d='M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z'/>"),
-            'chat' => $svg("<path fill='{$navy}' d='M12 2a10 10 0 0 0-8.7 15L2 22l5.2-1.3A10 10 0 1 0 12 2z'/>"),
-            'mail' => $svg("<path fill='{$navy}' d='M2 5h20v14H2z'/><path fill='none' stroke='#fff' stroke-width='2' d='M3 6l9 7 9-7'/>"),
-            'web' => $svg("<circle cx='12' cy='12' r='10' fill='{$navy}'/><path fill='none' stroke='#fff' stroke-width='1.6' d='M2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20'/>"),
+            'pin' => $svg("<circle cx='12' cy='9' r='7' fill='{$navy}'/><polygon points='5.6,11.5 18.4,11.5 12,23' fill='{$navy}'/><circle cx='12' cy='9' r='2.8' fill='#fff'/>"),
+            'phone' => $svg("<path fill='{$navy}' d='M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z'/>"),
+            'chat' => $svg("<circle cx='12.5' cy='11' r='9.5' fill='{$navy}'/><polygon points='3.5,15 2,23 9.5,19.5' fill='{$navy}'/><circle cx='8.5' cy='11' r='1.4' fill='#fff'/><circle cx='12.5' cy='11' r='1.4' fill='#fff'/><circle cx='16.5' cy='11' r='1.4' fill='#fff'/>"),
+            'mail' => $svg("<rect x='1.5' y='4.5' width='21' height='15' rx='1.5' fill='{$navy}'/><polyline points='2.5,6 12,13 21.5,6' fill='none' stroke='#fff' stroke-width='2'/>"),
+            'web' => $svg("<circle cx='12' cy='12' r='10.5' fill='{$navy}'/><ellipse cx='12' cy='12' rx='4.2' ry='10.5' fill='none' stroke='#fff' stroke-width='1.5'/><line x1='1.5' y1='12' x2='22.5' y2='12' stroke='#fff' stroke-width='1.5'/><line x1='3.5' y1='7' x2='20.5' y2='7' stroke='#fff' stroke-width='1.2'/><line x1='3.5' y1='17' x2='20.5' y2='17' stroke='#fff' stroke-width='1.2'/>"),
         ];
     }
 

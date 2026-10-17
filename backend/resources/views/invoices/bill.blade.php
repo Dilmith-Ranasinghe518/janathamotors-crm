@@ -21,14 +21,18 @@
     table { border-collapse: collapse; }
 
     .head { width: 100%; margin: 2px 0 0; }
-    .head-rule { border-top: 2px solid #c2410c; border-bottom: 1px solid #1f2a5a; height: 2px; margin: 8px 0 4px; }
-    .logo-cell { width: 72px; vertical-align: middle; padding-right: 8px; }
-    .logo { max-height: 64px; max-width: 70px; }
+    .head-rule { border-top: 1.5px solid #1f2a5a; margin: 8px 0 4px; }
+    .logo-cell { width: 102px; vertical-align: middle; padding-right: 8px; }
+    .logo { max-height: 92px; max-width: 100px; }
     .name-cell { vertical-align: middle; }
-    .co-name { font-size: 45px; font-weight: bold; color: #1f2a5a; margin: 0; letter-spacing: -0.2px; white-space: nowrap; }
+    .co-name { font-size: 41px; font-weight: bold; color: #1f2a5a; margin: 0; letter-spacing: -0.2px; white-space: nowrap; }
     .info-cell { text-align: center; padding-top: 4px; }
     .co-line { font-size: 11px; color: #1f2937; margin-top: 2px; font-weight: bold; }
-    .ico { width: 10px; height: 10px; margin-right: 3px; vertical-align: -1px; }
+    .info-line { margin: 2px auto 0; }
+    .info-line td { vertical-align: middle; padding: 0; font-size: 11px; font-weight: bold; color: #1f2937; white-space: nowrap; }
+    .info-line .i { width: 13px; padding-right: 4px; }
+    .info-line .i img { width: 11px; height: 11px; display: block; }
+    .info-line .sp { width: 14px; }
     .co-tag { font-size: 12.5px; font-weight: bold; color: #c2410c; margin-top: 3px; }
 
     .title { text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; color: #111827; margin: 6px 0 8px; }
@@ -84,20 +88,26 @@
         {{-- Rows below: contact lines centred across the header --}}
         <tr>
             <td colspan="{{ $logoDataUri ? 2 : 1 }}" class="info-cell">
-                @if($company['address'])
-                    <div class="co-line"><img src="{{ $icons['pin'] }}" class="ico">{{ $company['address'] }}</div>
-                @endif
-                <div class="co-line">
-                    @if($company['phone'])<img src="{{ $icons['phone'] }}" class="ico">{{ $company['phone'] }} &nbsp;&nbsp;@endif
-                    @if($company['whatsapp'])<img src="{{ $icons['chat'] }}" class="ico">{{ $company['whatsapp'] }} &nbsp;&nbsp;@endif
-                    @if($company['email'])<img src="{{ $icons['mail'] }}" class="ico">{{ $company['email'] }}@endif
-                </div>
-                @if($company['website'] || $company['branches'])
-                    <div class="co-line">
-                        @if($company['website'])<img src="{{ $icons['web'] }}" class="ico">{{ $company['website'] }} &nbsp;&nbsp;@endif
-                        @if($company['branches'])Branches: {{ $company['branches'] }}@endif
-                    </div>
-                @endif
+                @php
+                    // Contact lines: each item is [icon key or null, text]; empty items are skipped.
+                    $contactLines = [
+                        [['pin', $company['address']]],
+                        [['phone', $company['phone']], ['chat', $company['whatsapp']], ['mail', $company['email']]],
+                        [['web', $company['website']], [null, $company['branches'] ? 'Branches: '.$company['branches'] : null]],
+                    ];
+                @endphp
+                @foreach($contactLines as $items)
+                    @php $items = array_values(array_filter($items, fn ($item) => filled($item[1]))); @endphp
+                    @if($items)
+                        <table class="info-line"><tr>
+                            @foreach($items as $n => [$icon, $text])
+                                @if($n > 0)<td class="sp"></td>@endif
+                                @if($icon)<td class="i"><img src="{{ $icons[$icon] }}" alt=""></td>@endif
+                                <td class="t">{{ $text }}</td>
+                            @endforeach
+                        </tr></table>
+                    @endif
+                @endforeach
                 @if(($isVat && $company['vat_reg_no']) || $company['business_reg_no'])
                     <div class="co-line">
                         @if($isVat && $company['vat_reg_no'])VAT Reg. No: {{ $company['vat_reg_no'] }} &nbsp;&nbsp; @endif
