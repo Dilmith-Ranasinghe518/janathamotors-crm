@@ -48,7 +48,7 @@ export function ProductQrModal({ product, onClose }) {
         ${svgMarkup()}
         <div class="no">${escapeHtml(product.item_code || product.item_no)}</div>
         <div class="meta"><b>${escapeHtml(product.name)}</b></div>
-        ${product.store ? `<div class="meta">${escapeHtml(product.store.name)} (${escapeHtml(product.store.code)})</div>` : ''}
+        ${product.store ? `<div class="meta">Store: ${escapeHtml(product.store.code)}</div>` : ''}
         ${product.shelf_location ? `<div class="meta">Location: ${escapeHtml(product.shelf_location)}</div>` : ''}
       </div>
       <script>window.onload = () => { window.print(); window.close(); }</script>
@@ -77,13 +77,10 @@ export function ProductQrModal({ product, onClose }) {
           <div className="font-mono text-lg font-bold text-[var(--ink)]">{product.item_code || product.item_no}</div>
           <div className="mt-1 text-sm font-semibold text-[var(--ink)]">{product.name}</div>
           <div className="mt-1 text-xs text-[var(--muted)]">
-            Store: <span className="text-[var(--ink)]">{product.store ? `${product.store.name} (${product.store.code})` : '—'}</span>
+            Store: <span className="text-[var(--ink)]">{product.store?.code || '—'}</span>
           </div>
           <div className="text-xs text-[var(--muted)]">
             Location: <span className="text-[var(--ink)]">{product.shelf_location || '—'}</span>
-          </div>
-          <div className="mt-1 text-[11px] text-[var(--muted)]">
-            Item No {product.item_no}{product.part_no ? ` · Part No ${product.part_no}` : ''}
           </div>
         </div>
         <div className="flex w-full justify-end gap-2 border-t border-[var(--line)] pt-3">

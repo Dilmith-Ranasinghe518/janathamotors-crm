@@ -6,7 +6,7 @@ export function qrPayload(product) {
   return [
     `Item Code: ${product.item_code || product.item_no}`,
     `Item: ${product.name}`,
-    product.store && `Store: ${product.store.name} (${product.store.code})`,
+    product.store && `Store: ${product.store.code}`,
     product.shelf_location && `Location: ${product.shelf_location}`,
   ]
     .filter(Boolean)
