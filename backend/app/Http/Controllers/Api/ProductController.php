@@ -330,7 +330,7 @@ class ProductController extends Controller
         }
 
         // Read and parse header
-        $header = fgetcsv($handle);
+        $header = fgetcsv($handle, null, ',', '"', '');
         if (! $header) {
             fclose($handle);
             return response()->json(['message' => 'The uploaded CSV file is empty.'], 422);
@@ -341,8 +341,8 @@ class ProductController extends Controller
 
         $columnMap = [];
         foreach ($header as $index => $col) {
-            $clean = strtolower(trim(preg_replace('/[^a-zA-Z0-9_]/', '_', (string) $col)));
-            $clean = trim($clean, '_');
+            // "Rack / Shelf Location" → "rack_shelf_location" (runs of symbols collapse to one underscore)
+            $clean = trim(strtolower(preg_replace('/[^a-zA-Z0-9]+/', '_', trim((string) $col))), '_');
 
             if (in_array($clean, ['item_no', 'item_number'])) {
                 $columnMap['item_no'] = $index;
@@ -352,19 +352,19 @@ class ProductController extends Controller
                 $columnMap['item_code'] = $index;
             } elseif (in_array($clean, ['name', 'product_name', 'item_name', 'title'])) {
                 $columnMap['name'] = $index;
-            } elseif (in_array($clean, ['brand', 'brand_name'])) {
+            } elseif (in_array($clean, ['brand', 'brand_name', 'part_brand', 'part_brand_manufacturer', 'manufacturer'])) {
                 $columnMap['brand'] = $index;
             } elseif (in_array($clean, ['category', 'category_name'])) {
                 $columnMap['category'] = $index;
             } elseif (in_array($clean, ['store', 'store_code', 'store_location', 'outlet', 'location'])) {
                 $columnMap['store'] = $index;
-            } elseif (in_array($clean, ['shelf_location', 'shelf', 'rack', 'rack_location', 'bin', 'bin_location'])) {
+            } elseif (in_array($clean, ['shelf_location', 'shelf', 'rack', 'rack_location', 'rack_shelf_location', 'bin', 'bin_location'])) {
                 $columnMap['shelf_location'] = $index;
-            } elseif (in_array($clean, ['vehicle_brand', 'car_brand', 'vehicle_make', 'make'])) {
+            } elseif (in_array($clean, ['vehicle_brand', 'vehicle_brand_make', 'car_brand', 'vehicle_make', 'make'])) {
                 $columnMap['vehicle_brand'] = $index;
             } elseif (in_array($clean, ['vehicle_model', 'car_model', 'model'])) {
                 $columnMap['vehicle_model'] = $index;
-            } elseif (in_array($clean, ['compatible_models', 'compatibility', 'compatible', 'compatible_vehicles'])) {
+            } elseif (in_array($clean, ['compatible_models', 'compatible_models_notes', 'compatibility', 'compatible', 'compatible_vehicles', 'notes'])) {
                 $columnMap['compatible_models'] = $index;
             } elseif (in_array($clean, ['cost_price', 'cost', 'buying_price', 'purchase_price'])) {
                 $columnMap['cost_price'] = $index;
@@ -404,7 +404,7 @@ class ProductController extends Controller
         $skipped = 0;
         $errors = [];
 
-        while (($row = fgetcsv($handle)) !== false) {
+        while (($row = fgetcsv($handle, null, ',', '"', '')) !== false) {
             $rowNumber++;
 
             // Skip completely empty lines
@@ -518,10 +518,11 @@ class ProductController extends Controller
             $stockSpecified = isset($columnMap['stock']) && is_numeric(trim((string) ($row[$columnMap['stock']] ?? '')));
             $targetStock = $stockSpecified ? (int) trim((string) $row[$columnMap['stock']]) : 0;
 
-            // Match an existing product by Item No, then Item Code, then Part No.
+            // Match an existing product by Item No or Item Code. Part No is shared by alternative
+            // parts (different brands of the same OEM part), so it is used only when a row has neither.
             $product = ($itemNo !== '' ? Product::where('item_no', $itemNo)->first() : null)
                 ?? ($itemCode !== '' ? Product::where('item_code', $itemCode)->first() : null)
-                ?? ($partNo !== '' ? Product::where('part_no', $partNo)->first() : null);
+                ?? ($itemNo === '' && $itemCode === '' && $partNo !== '' ? Product::where('part_no', $partNo)->first() : null);
 
             if ($product) {
                 if (! $updateExisting) {
