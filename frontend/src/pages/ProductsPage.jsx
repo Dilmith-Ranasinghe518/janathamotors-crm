@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -13,6 +13,8 @@ import {
   FileText,
   QrCode,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
@@ -76,12 +78,23 @@ export function ProductsPage() {
     queryFn: () => api.get('/stores', { params: { all: true } }).then((r) => r.data),
   })
 
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(50)
+
+  // Any change to the search or filters starts again from the first page.
+  useEffect(() => {
+    setPage(1)
+  }, [search, selectedStoreId, selectedCategoryId, lowStockOnly, perPage])
+
   const productsQuery = useQuery({
-    queryKey: ['products', search, selectedStoreId, selectedCategoryId, lowStockOnly],
+    queryKey: ['products', search, selectedStoreId, selectedCategoryId, lowStockOnly, page, perPage],
+    placeholderData: (prev) => prev,
     queryFn: () =>
       api
         .get('/products', {
           params: {
+            page,
+            per_page: perPage,
             search: search || undefined,
             store_id: selectedStoreId || undefined,
             category_id: selectedCategoryId || undefined,
@@ -536,6 +549,15 @@ export function ProductsPage() {
             </tbody>
           </table>
         )}
+        {productsQuery.data?.total > 0 && (
+          <Pagination
+            meta={productsQuery.data}
+            page={page}
+            onPage={setPage}
+            perPage={perPage}
+            onPerPage={setPerPage}
+          />
+        )}
       </Card>
 
       {formOpen && (
@@ -866,6 +888,60 @@ export function ProductsPage() {
             </div>
           )}
         </Modal>
+      )}
+    </div>
+  )
+}
+
+/** Footer for the inventory table: range shown, rows per page, and page navigation. */
+function Pagination({ meta, page, onPage, perPage, onPerPage }) {
+  const last = meta.last_page
+  // Page numbers around the current one, with the first and last always reachable.
+  const pages = [...new Set([1, page - 1, page, page + 1, last])].filter((p) => p >= 1 && p <= last).sort((a, b) => a - b)
+  const btn = 'inline-flex min-w-8 items-center justify-center gap-1 rounded-lg border border-[var(--line)] px-2.5 py-1.5 font-semibold text-[var(--ink)] hover:bg-[var(--paper)] disabled:opacity-40'
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] px-4 py-3 text-xs text-[var(--muted)]">
+      <div className="flex items-center gap-3">
+        <span>
+          Showing <strong className="text-[var(--ink)]">{meta.from}–{meta.to}</strong> of{' '}
+          <strong className="text-[var(--ink)]">{meta.total}</strong> products
+        </span>
+        <label className="flex items-center gap-1.5">
+          <span>Rows</span>
+          <select
+            value={perPage}
+            onChange={(e) => onPerPage(Number(e.target.value))}
+            className="rounded-md border border-[var(--line)] bg-[var(--surface)] px-1.5 py-1 text-xs text-[var(--ink)]"
+          >
+            {[25, 50, 100, 200].map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {last > 1 && (
+        <div className="flex items-center gap-1.5">
+          <button type="button" className={btn} disabled={page <= 1} onClick={() => onPage(page - 1)}>
+            <ChevronLeft className="h-3.5 w-3.5" /> Prev
+          </button>
+          {pages.map((p, i) => (
+            <span key={p} className="flex items-center gap-1.5">
+              {i > 0 && p - pages[i - 1] > 1 && <span>…</span>}
+              <button
+                type="button"
+                onClick={() => onPage(p)}
+                className={p === page ? `${btn} border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]` : btn}
+              >
+                {p}
+              </button>
+            </span>
+          ))}
+          <button type="button" className={btn} disabled={page >= last} onClick={() => onPage(page + 1)}>
+            Next <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
       )}
     </div>
   )
