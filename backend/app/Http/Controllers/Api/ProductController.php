@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\StockLedger;
+use App\Models\StockTransfer;
 use App\Models\Store;
 use App\Models\VehicleBrand;
 use App\Models\VehicleModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProductController extends Controller
@@ -20,6 +23,7 @@ class ProductController extends Controller
         $products = Product::query()
             ->with(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel'])
             ->withSum('stockLedger as stock_on_hand', 'quantity')
+            ->when(! $request->boolean('include_inactive'), fn ($q) => $q->where('is_active', true))
             ->when($request->filled('store_id'), fn ($q) => $q->where('store_id', $request->input('store_id')))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->input('category_id')))
             ->when($request->string('search')->isNotEmpty(), function ($q) use ($request) {
@@ -149,6 +153,57 @@ class ProductController extends Controller
     }
 
     /**
+     * Admin only. mode "stock": every stock quantity back to zero (products kept).
+     * mode "products": delete every product and its stock. Products already on invoices or
+     * purchases cannot be deleted without breaking those bills, so they are archived instead:
+     * hidden from Inventory, with the Item Code freed for reuse.
+     */
+    public function flush(Request $request)
+    {
+        $data = $request->validate([
+            'mode' => ['required', 'in:stock,products'],
+            'confirm' => ['required', 'in:FLUSH'],
+        ], [
+            'confirm.in' => 'Type FLUSH to confirm.',
+        ]);
+
+        $summary = DB::transaction(function () use ($data, $request) {
+            $summary = [
+                'stock_entries_cleared' => StockLedger::count(),
+                'transfers_cleared' => StockTransfer::count(),
+            ];
+
+            StockLedger::query()->delete();
+            StockTransfer::query()->delete();
+
+            if ($data['mode'] === 'products') {
+                $usedIds = DB::table('invoice_items')->pluck('product_id')
+                    ->merge(DB::table('purchase_items')->pluck('product_id'))
+                    ->unique();
+
+                $summary['products_archived'] = Product::whereIn('id', $usedIds)->where('is_active', true)
+                    ->update(['is_active' => false, 'item_code' => null]);
+                $summary['products_deleted'] = Product::whereNotIn('id', $usedIds)->delete();
+            }
+
+            AuditLog::create([
+                'user_id' => $request->user()->id,
+                'action' => $data['mode'] === 'products' ? 'inventory.flush_products' : 'inventory.flush_stock',
+                'model_type' => Product::class,
+                'changes' => $summary,
+            ]);
+
+            return $summary;
+        });
+
+        return response()->json([
+            'message' => $data['mode'] === 'products'
+                ? "Inventory flushed: {$summary['products_deleted']} products deleted, {$summary['products_archived']} archived."
+                : 'Stock reset: all quantities are now zero.',
+        ] + $summary);
+    }
+
+    /**
      * Export inventory products to a downloadable CSV file.
      */
     public function export(Request $request): StreamedResponse
@@ -156,6 +211,7 @@ class ProductController extends Controller
         $products = Product::query()
             ->with(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel'])
             ->withSum('stockLedger as stock_on_hand', 'quantity')
+            ->when(! $request->boolean('include_inactive'), fn ($q) => $q->where('is_active', true))
             ->when($request->filled('store_id'), fn ($q) => $q->where('store_id', $request->input('store_id')))
             ->when($request->string('search')->isNotEmpty(), function ($q) use ($request) {
                 $term = '%'.$request->string('search').'%';
@@ -531,6 +587,7 @@ class ProductController extends Controller
                 }
 
                 $product->update([
+                    'is_active' => true, // re-importing an archived product brings it back
                     'part_no' => $partNo !== '' ? $partNo : $product->part_no,
                     'item_code' => $itemCode !== '' ? $itemCode : $product->item_code,
                     'name' => $name,

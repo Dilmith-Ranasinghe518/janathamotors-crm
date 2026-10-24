@@ -43,6 +43,7 @@ Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
     Route::get('/products/export', [ProductController::class, 'export'])->middleware('permission:manage_products');
     Route::get('/products/template', [ProductController::class, 'template'])->middleware('permission:manage_products');
     Route::post('/products/import', [ProductController::class, 'import'])->middleware('permission:manage_products');
+    Route::post('/products/flush', [ProductController::class, 'flush'])->middleware('role:Admin');
     Route::apiResource('products', ProductController::class)->middleware('permission:manage_products');
     Route::post('/products/{product}/adjust-stock', [StockController::class, 'adjust'])->middleware('permission:manage_stock');
     Route::get('/stock-ledger', [StockController::class, 'index'])->middleware('permission:manage_stock');

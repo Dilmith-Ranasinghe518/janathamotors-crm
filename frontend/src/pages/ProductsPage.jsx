@@ -12,12 +12,14 @@ import {
   AlertCircle,
   FileText,
   QrCode,
+  Trash2,
 } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { ProductQrModal, ProductQrThumb, printQrSheet } from '../components/ProductQr'
 import { codeFromQr } from '../lib/qr'
+import { FlushInventoryModal } from '../components/FlushInventoryModal'
 
 function formatDate(value) {
   return value ? new Date(value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
@@ -41,7 +43,9 @@ const emptyForm = {
 }
 
 export function ProductsPage() {
-  const { can } = useAuth()
+  const { can, user } = useAuth()
+  const isAdmin = Boolean(user?.roles?.includes('Admin'))
+  const [flushOpen, setFlushOpen] = useState(false)
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [selectedStoreId, setSelectedStoreId] = useState('')
@@ -314,6 +318,18 @@ export function ProductsPage() {
         actions={
           can('manage_products') && (
             <div className="flex flex-wrap items-center gap-2">
+              {isAdmin && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setFlushOpen(true)}
+                  className="flex items-center gap-1.5 border-[var(--critical)] text-[var(--critical)] hover:bg-[var(--critical-soft)]"
+                  title="Admin only: clear stock or remove all products"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Flush Inventory</span>
+                </Button>
+              )}
+
               <Button
                 variant="secondary"
                 onClick={handlePrintQrSheet}
@@ -652,6 +668,8 @@ export function ProductsPage() {
           </form>
         </Modal>
       )}
+
+      {flushOpen && <FlushInventoryModal onClose={() => setFlushOpen(false)} />}
 
       {qrProduct && <ProductQrModal product={qrProduct} onClose={() => setQrProduct(null)} />}
 
