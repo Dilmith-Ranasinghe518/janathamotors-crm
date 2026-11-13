@@ -545,7 +545,8 @@ class InvoiceController extends Controller
     private function createProductsFromLines(array &$items, $storeId, Request $request): array
     {
         $created = [];
-        $storeId = $storeId ?: (Store::where('code', 'JMS-01')->value('id') ?? Store::value('id'));
+        // New items go to the invoice's store if it has one, otherwise JMS-02.
+        $storeId = $storeId ?: (Store::where('code', 'JMS-02')->value('id') ?? Store::value('id'));
 
         foreach ($items as &$item) {
             if (! empty($item['product_id']) || blank($item['new_product_name'] ?? null)) {
