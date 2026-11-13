@@ -344,7 +344,7 @@ export function InvoiceCreatePage() {
       setCustomerAddress(inv.customer_address || '')
       setDeliveryDate(String(inv.delivery_date || inv.created_at || '').slice(0, 10))
       setPlaceOfSupply(inv.place_of_supply || '')
-      setPaymentMode(inv.payment_mode || '')
+      setPaymentMode(inv.payment_mode || (inv.is_credit ? 'credit' : 'cash'))
       setAdditionalInfo(inv.additional_info || '')
 
       setPaidAmount(String(inv.paid_amount || '0'))
@@ -790,22 +790,6 @@ export function InvoiceCreatePage() {
                   className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2.5 text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
                 />
               </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Mode of Payment</span>
-                <select
-                  value={paymentMode}
-                  onChange={(e) => setPaymentMode(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] px-3.5 py-2.5 text-sm text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
-                >
-                  <option value="">— Not specified —</option>
-                  <option value="cash">Cash</option>
-                  <option value="card">Card</option>
-                  <option value="bank_transfer">Bank Transfer</option>
-                  <option value="cheque">Cheque</option>
-                  <option value="online">Online Payment</option>
-                  <option value="credit">Credit</option>
-                </select>
-              </label>
               <label className="flex flex-col gap-1.5 md:col-span-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">Additional Information</span>
                 <input
@@ -914,6 +898,27 @@ export function InvoiceCreatePage() {
                     className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3.5 py-2 text-right font-mono text-base font-black text-[var(--success)] focus:border-[var(--accent)] focus:outline-none"
                   />
                 </div>
+
+                {!isCredit && (
+                  <div className="mt-3">
+                    <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-[var(--muted)]">
+                      Mode of Payment
+                    </label>
+                    <select
+                      value={paymentMode}
+                      onChange={(e) => setPaymentMode(e.target.value)}
+                      className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3.5 py-2 text-sm font-semibold text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none"
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="card">Card</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      {/* keep an older bill's other mode (e.g. cheque) selectable when editing */}
+                      {paymentMode && !['cash', 'card', 'bank_transfer'].includes(paymentMode) && (
+                        <option value={paymentMode}>{paymentMode.replace('_', ' ')}</option>
+                      )}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-between rounded-xl bg-[var(--paper)] p-3 border border-[var(--line)]">

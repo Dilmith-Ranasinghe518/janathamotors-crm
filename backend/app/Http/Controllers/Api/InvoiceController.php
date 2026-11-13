@@ -179,7 +179,10 @@ class InvoiceController extends Controller
             if ($paidAmount > 0) {
                 $invoice->payments()->create([
                     'amount' => $paidAmount,
-                    'method' => 'cash',
+                    // payments.method allows cash / card / bank_transfer / other
+                    'method' => in_array($data['payment_mode'] ?? null, ['cash', 'card', 'bank_transfer'], true)
+                        ? $data['payment_mode']
+                        : (($data['payment_mode'] ?? null) ? 'other' : 'cash'),
                     'paid_at' => now(),
                     'received_by' => $request->user()->id,
                 ]);
