@@ -306,10 +306,13 @@ export function ReportsPage() {
 
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {report.summary.map((s) => (
-                  <Card key={s.label} className="p-4">
-                    <p className="text-xs font-medium text-[var(--muted)]">{s.label}</p>
-                    <p className="mt-1 text-xl font-bold tabular-nums text-[var(--ink)]">
-                      {s.type === 'money' && <span className="mr-1 text-xs font-semibold text-[var(--muted)]">LKR</span>}
+                  <Card key={s.label} className="min-w-0 p-4">
+                    <p className="text-xs font-medium text-[var(--muted)]">
+                      {s.label}
+                      {s.type === 'money' && <span className="ml-1 font-semibold">(LKR)</span>}
+                    </p>
+                    {/* sized to fit large amounts (e.g. 41,261,300.00) without spilling out of the tile */}
+                    <p className="mt-1 break-words text-lg font-bold leading-tight tabular-nums text-[var(--ink)] xl:text-xl">
                       {formatValue(s.value, s.type)}
                     </p>
                   </Card>
