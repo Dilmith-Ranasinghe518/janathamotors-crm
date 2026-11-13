@@ -284,7 +284,7 @@
 
     <table class="sign">
         <tr>
-            <td><div class="line">Prepared By{{ $invoice->creator ? ': '.$invoice->creator->name : '' }}</div></td>
+            <td><div class="line">Prepared By</div></td>
             <td><div class="line">Checked By</div></td>
             <td><div class="line">Customer</div></td>
         </tr>
