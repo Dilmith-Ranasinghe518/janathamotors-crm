@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\StockLedger;
+use App\Models\Store;
 use App\Support\AmountInWords;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -64,7 +65,9 @@ class InvoiceController extends Controller
             'additional_info' => ['nullable', 'string', 'max:1000'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            // A line is either an existing product, or a new item typed on the invoice (name + price).
+            'items.*.product_id' => ['nullable', 'required_without:items.*.new_product_name', 'exists:products,id'],
+            'items.*.new_product_name' => ['nullable', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
@@ -73,7 +76,9 @@ class InvoiceController extends Controller
             'customer_id.required_if_accepted' => 'Please select a customer for this credit bill.',
         ]);
 
-        $invoice = DB::transaction(function () use ($data, $request) {
+        $invoice = DB::transaction(function () use (&$data, $request) {
+            $newItemStock = $this->createProductsFromLines($data['items'], $data['store_id'] ?? null, $request);
+
             foreach ($data['items'] as $item) {
                 $product = Product::findOrFail($item['product_id']);
                 if ($product->stock_on_hand < $item['quantity']) {
@@ -145,6 +150,7 @@ class InvoiceController extends Controller
             ] + $this->taxInvoiceFields($data, (float) Setting::get('tax_rate', 0), $total));
 
             $this->rememberCustomerTaxDetails($customerId, $data);
+            $this->linkProductsToInvoice($newItemStock, $invoice);
 
             foreach ($data['items'] as $item) {
                 $lineTotal = ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0);
@@ -211,7 +217,9 @@ class InvoiceController extends Controller
             'additional_info' => ['nullable', 'string', 'max:1000'],
             'paid_amount' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'exists:products,id'],
+            // A line is either an existing product, or a new item typed on the invoice (name + price).
+            'items.*.product_id' => ['nullable', 'required_without:items.*.new_product_name', 'exists:products,id'],
+            'items.*.new_product_name' => ['nullable', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.discount' => ['nullable', 'numeric', 'min:0'],
@@ -220,7 +228,9 @@ class InvoiceController extends Controller
             'customer_id.required_if_accepted' => 'Please select a customer for this credit bill.',
         ]);
 
-        $updatedInvoice = DB::transaction(function () use ($data, $invoice, $request) {
+        $updatedInvoice = DB::transaction(function () use (&$data, $invoice, $request) {
+            $newItemStock = $this->createProductsFromLines($data['items'], $invoice->store_id, $request);
+
             // Revert stock for existing items
             foreach ($invoice->items as $oldItem) {
                 StockLedger::create([
@@ -303,6 +313,7 @@ class InvoiceController extends Controller
             ] + $this->taxInvoiceFields($data, (float) $invoice->vat_rate, $total));
 
             $this->rememberCustomerTaxDetails($customerId, $data);
+            $this->linkProductsToInvoice($newItemStock, $invoice);
 
             // Create new line items & stock ledger entries
             foreach ($data['items'] as $item) {
@@ -520,6 +531,58 @@ class InvoiceController extends Controller
             'total' => $total,
             'words' => AmountInWords::rupees($total),
         ];
+    }
+
+    /**
+     * Lines typed on the invoice for items not in inventory become new products (source "invoice"),
+     * priced at the line's selling price. The quantity sold is booked in first, so the sale's stock
+     * check passes and the new item nets to zero stock. Fills in each line's product_id; returns the
+     * new products and their stock entries, to be tied to the invoice once it exists.
+     */
+    private function createProductsFromLines(array &$items, $storeId, Request $request): array
+    {
+        $created = [];
+        $storeId = $storeId ?: (Store::where('code', 'JMS-01')->value('id') ?? Store::value('id'));
+
+        foreach ($items as &$item) {
+            if (! empty($item['product_id']) || blank($item['new_product_name'] ?? null)) {
+                continue;
+            }
+
+            $product = Product::create([
+                'name' => trim($item['new_product_name']),
+                'selling_price' => $item['unit_price'],
+                'cost_price' => 0,
+                'store_id' => $storeId,
+                'unit' => 'pc',
+                'reorder_level' => 0,
+                'source' => 'invoice',
+            ]);
+
+            $entry = StockLedger::create([
+                'product_id' => $product->id,
+                'store_id' => $storeId,
+                'type' => 'adjustment',
+                'quantity' => $item['quantity'],
+                'created_by' => $request->user()->id,
+                'note' => 'New item added through an invoice',
+            ]);
+
+            $item['product_id'] = $product->id;
+            $created[] = [$product, $entry];
+        }
+        unset($item);
+
+        return $created;
+    }
+
+    /** Tie products created on an invoice (and their opening stock entries) to that invoice. */
+    private function linkProductsToInvoice(array $created, Invoice $invoice): void
+    {
+        foreach ($created as [$product, $entry]) {
+            $product->update(['source_invoice_id' => $invoice->id]);
+            $entry->update(['reference_type' => Invoice::class, 'reference_id' => $invoice->id]);
+        }
     }
 
     /**

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 #[Fillable([
     'part_no', 'item_code', 'name', 'category_id', 'brand_id', 'store_id', 'shelf_location', 'vehicle_brand_id', 'vehicle_model_id', 'compatible_models',
-    'cost_price', 'selling_price', 'unit', 'reorder_level', 'is_active',
+    'cost_price', 'selling_price', 'unit', 'reorder_level', 'is_active', 'source', 'source_invoice_id',
 ])]
 class Product extends Model
 {
@@ -82,6 +82,12 @@ class Product extends Model
     public function vehicleModel(): BelongsTo
     {
         return $this->belongsTo(VehicleModel::class);
+    }
+
+    /** The invoice a product was first typed onto, for products added through invoices. */
+    public function sourceInvoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'source_invoice_id');
     }
 
     public function stockLedger(): HasMany

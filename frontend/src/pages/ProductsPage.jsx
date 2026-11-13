@@ -53,6 +53,8 @@ export function ProductsPage() {
   const [selectedStoreId, setSelectedStoreId] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
   const [lowStockOnly, setLowStockOnly] = useState(false)
+  // '' = all products, 'invoice' = items first typed onto an invoice (to be completed)
+  const [source, setSource] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(emptyForm)
@@ -78,16 +80,22 @@ export function ProductsPage() {
     queryFn: () => api.get('/stores', { params: { all: true } }).then((r) => r.data),
   })
 
+  const viaInvoiceQuery = useQuery({
+    queryKey: ['products', 'via-invoice-count'],
+    queryFn: () => api.get('/products', { params: { source: 'invoice', per_page: 1 } }).then((r) => r.data.total),
+  })
+  const viaInvoiceCount = viaInvoiceQuery.data ?? 0
+
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(50)
 
   // Any change to the search or filters starts again from the first page.
   useEffect(() => {
     setPage(1)
-  }, [search, selectedStoreId, selectedCategoryId, lowStockOnly, perPage])
+  }, [search, selectedStoreId, selectedCategoryId, lowStockOnly, source, perPage])
 
   const productsQuery = useQuery({
-    queryKey: ['products', search, selectedStoreId, selectedCategoryId, lowStockOnly, page, perPage],
+    queryKey: ['products', search, selectedStoreId, selectedCategoryId, lowStockOnly, source, page, perPage],
     placeholderData: (prev) => prev,
     queryFn: () =>
       api
@@ -99,6 +107,7 @@ export function ProductsPage() {
             store_id: selectedStoreId || undefined,
             category_id: selectedCategoryId || undefined,
             low_stock: lowStockOnly || undefined,
+            source: source || undefined,
           },
         })
         .then((r) => r.data),
@@ -213,6 +222,7 @@ export function ProductsPage() {
             store_id: selectedStoreId || undefined,
             category_id: selectedCategoryId || undefined,
             low_stock: lowStockOnly || undefined,
+            source: source || undefined,
           },
         })
         all.push(...data.data)
@@ -242,6 +252,7 @@ export function ProductsPage() {
           search: search || undefined,
           store_id: selectedStoreId || undefined,
           low_stock: lowStockOnly || undefined,
+          source: source || undefined,
         },
         responseType: 'blob',
       })
@@ -389,6 +400,34 @@ export function ProductsPage() {
         }
       />
 
+      <div className="mb-4 flex gap-1 border-b border-[var(--line)]">
+        {[
+          { value: '', label: 'All products' },
+          { value: 'invoice', label: 'Added via invoices', count: viaInvoiceCount },
+        ].map((tab) => (
+          <button
+            key={tab.value || 'all'}
+            type="button"
+            onClick={() => setSource(tab.value)}
+            className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-semibold transition ${
+              source === tab.value
+                ? 'border-[var(--accent)] text-[var(--accent)]'
+                : 'border-transparent text-[var(--muted)] hover:text-[var(--ink)]'
+            }`}
+          >
+            {tab.label}
+            {tab.count > 0 && (
+              <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-bold text-[var(--accent)]">{tab.count}</span>
+            )}
+          </button>
+        ))}
+      </div>
+      {source === 'invoice' && (
+        <p className="mb-4 text-xs text-[var(--muted)]">
+          Items typed onto invoices because they were not in inventory. Edit each one to add its part no, category, cost price and stock.
+        </p>
+      )}
+
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="w-64 sm:w-80">
           <Input
@@ -488,6 +527,11 @@ export function ProductsPage() {
                         </span>
                       )}
                       {p.brand && <span>Brand: {p.brand.name}</span>}
+                      {p.source === 'invoice' && (
+                        <span className="rounded bg-[var(--warning-soft)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--warning)]">
+                          Via invoice{p.source_invoice?.invoice_no ? ` ${p.source_invoice.invoice_no}` : ''}
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3.5 text-xs whitespace-nowrap">

@@ -21,9 +21,10 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $products = Product::query()
-            ->with(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel'])
+            ->with(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel', 'sourceInvoice:id,invoice_no'])
             ->withSum('stockLedger as stock_on_hand', 'quantity')
             ->when(! $request->boolean('include_inactive'), fn ($q) => $q->where('is_active', true))
+            ->when($request->filled('source'), fn ($q) => $q->where('source', $request->input('source')))
             ->when($request->filled('store_id'), fn ($q) => $q->where('store_id', $request->input('store_id')))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->input('category_id')))
             ->when($request->string('search')->isNotEmpty(), function ($q) use ($request) {
@@ -212,6 +213,7 @@ class ProductController extends Controller
             ->with(['category', 'brand', 'store', 'vehicleBrand', 'vehicleModel'])
             ->withSum('stockLedger as stock_on_hand', 'quantity')
             ->when(! $request->boolean('include_inactive'), fn ($q) => $q->where('is_active', true))
+            ->when($request->filled('source'), fn ($q) => $q->where('source', $request->input('source')))
             ->when($request->filled('store_id'), fn ($q) => $q->where('store_id', $request->input('store_id')))
             ->when($request->string('search')->isNotEmpty(), function ($q) use ($request) {
                 $term = '%'.$request->string('search').'%';

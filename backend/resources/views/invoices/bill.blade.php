@@ -108,11 +108,8 @@
                         </tr></table>
                     @endif
                 @endforeach
-                @if(($isVat && $company['vat_reg_no']) || $company['business_reg_no'])
-                    <div class="co-line">
-                        @if($isVat && $company['vat_reg_no'])VAT Reg. No: {{ $company['vat_reg_no'] }} &nbsp;&nbsp; @endif
-                        @if($company['business_reg_no'])Business Reg. No: {{ $company['business_reg_no'] }}@endif
-                    </div>
+                @if($isVat && $company['vat_reg_no'])
+                    <div class="co-line">VAT Reg. No: {{ $company['vat_reg_no'] }}</div>
                 @endif
                 @if($company['tagline'])<div class="co-tag">{{ $company['tagline'] }}</div>@endif
             </td>
@@ -293,6 +290,6 @@
         </tr>
     </table>
 
-    <div class="credit">Software by Calcify Int</div>
+    <div class="credit">Software by Calcify Int &nbsp;·&nbsp; +94 70 160 0215</div>
 </body>
 </html>

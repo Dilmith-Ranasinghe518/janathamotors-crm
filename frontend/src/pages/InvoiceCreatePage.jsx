@@ -22,7 +22,7 @@ import { codeFromQr } from '../lib/qr'
 import { Button, Card, PageHeader } from '../components/ui'
 import { CustomerSelect } from '../components/CustomerSelect'
 
-const blankLine = { product_id: '', product_name: '', product_data: null, quantity: 1, unit_price: '', discount: 0 }
+const blankLine = { product_id: '', new_product_name: '', product_name: '', product_data: null, quantity: 1, unit_price: '', discount: 0 }
 
 /**
  * Customer Auto-suggest Input Component with clean Lucide icons
@@ -115,7 +115,7 @@ function CustomerSearchInput({ customers, customerName, onSelectCustomer, onName
 /**
  * Product Auto-suggest Input Component with Item No / Part No / Item Code search
  */
-function ProductSearchInput({ products, line, index, onSelectProduct, onClearProduct }) {
+function ProductSearchInput({ products, line, index, onSelectProduct, onClearProduct, onCreateNew }) {
   const [query, setQuery] = useState(line.product_name || '')
   const [isOpen, setIsOpen] = useState(false)
   const wrapperRef = useRef(null)
@@ -125,7 +125,7 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
   }, [line.product_name])
 
   const filteredProducts = useMemo(() => {
-    if (!query.trim() || line.product_id) return []
+    if (!query.trim() || line.product_id || line.new_product_name) return []
     const scanned = codeFromQr(query)
     if (scanned !== query) {
       // A scanned QR label: match its Item Code exactly.
@@ -142,7 +142,9 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
           (p.vehicle_model && p.vehicle_model.name.toLowerCase().includes(q))
       )
       .slice(0, 10)
-  }, [products, query, line.product_id])
+  }, [products, query, line.product_id, line.new_product_name])
+  const isScan = codeFromQr(query) !== query
+  const isPicked = Boolean(line.product_id || line.new_product_name)
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -171,14 +173,14 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
-            if (line.product_id) onClearProduct(index)
+            if (isPicked) onClearProduct(index)
             setIsOpen(true)
           }}
           onFocus={() => setIsOpen(true)}
           className="w-full rounded-xl border border-[var(--line)] bg-[var(--paper)] pl-9 pr-8 py-2.5 text-sm font-semibold text-[var(--ink)] placeholder-[var(--muted)] focus:border-[var(--accent)] focus:bg-[var(--surface)] focus:outline-none"
         />
 
-        {line.product_id && (
+        {isPicked && (
           <button
             type="button"
             onClick={() => {
@@ -192,8 +194,17 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
         )}
       </div>
 
-      {isOpen && !line.product_id && filteredProducts.length > 0 && (
+      {line.new_product_name && (
+        <p className="mt-1 text-[11px] font-semibold text-[var(--accent)]">
+          New item — enter its selling price; it will be added to Inventory when the invoice is saved.
+        </p>
+      )}
+
+      {isOpen && !isPicked && query.trim() && (filteredProducts.length > 0 || !isScan) && (
         <ul className="absolute left-0 right-0 z-50 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-[var(--line)] bg-[var(--surface)] p-1.5 shadow-2xl">
+          {filteredProducts.length === 0 && (
+            <li className="px-3 py-2 text-xs text-[var(--muted)]">No matching product in inventory.</li>
+          )}
           {filteredProducts.map((product) => (
             <li
               key={product.id}
@@ -253,6 +264,18 @@ function ProductSearchInput({ products, line, index, onSelectProduct, onClearPro
               </div>
             </li>
           ))}
+          {!isScan && (
+            <li
+              onClick={() => {
+                onCreateNew(index, query.trim())
+                setIsOpen(false)
+              }}
+              className="mt-1 flex cursor-pointer items-center gap-2 rounded-lg border-t border-[var(--line)] px-3 py-2.5 text-sm font-semibold text-[var(--accent)] transition hover:bg-[var(--accent-soft)]"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add “{query.trim()}” as a new item</span>
+            </li>
+          )}
         </ul>
       )}
     </div>
@@ -288,7 +311,7 @@ export function InvoiceCreatePage() {
   const [error, setError] = useState('')
 
   const customersQuery = useQuery({ queryKey: ['customers', 'all'], queryFn: () => api.get('/customers').then((r) => r.data) })
-  const productsQuery = useQuery({ queryKey: ['products', 'all'], queryFn: () => api.get('/products', { params: { search: '' } }).then((r) => r.data) })
+  const productsQuery = useQuery({ queryKey: ['products', 'all'], queryFn: () => api.get('/products', { params: { per_page: 1000 } }).then((r) => r.data) })
   const vehicleModelsQuery = useQuery({ queryKey: ['vehicle-models'], queryFn: () => api.get('/vehicle-models').then((r) => r.data) })
   const settingsQuery = useQuery({ queryKey: ['settings'], queryFn: () => api.get('/settings').then((r) => r.data) })
 
@@ -397,8 +420,20 @@ export function InvoiceCreatePage() {
     })
   }
 
+  // An item not in inventory: invoiced by name and price, and created in Inventory on save.
+  function handleCreateNew(index, name) {
+    updateLine(index, {
+      product_id: '',
+      new_product_name: name,
+      product_name: name,
+      product_data: null,
+      unit_price: '',
+    })
+  }
+
   function handleClearProduct(index) {
     updateLine(index, {
+      new_product_name: '',
       product_id: '',
       product_name: '',
       product_data: null,
@@ -411,9 +446,9 @@ export function InvoiceCreatePage() {
     setError('')
 
     const items = lines
-      .filter((l) => l.product_id && Number(l.quantity) > 0)
+      .filter((l) => (l.product_id || l.new_product_name) && Number(l.quantity) > 0)
       .map((l) => ({
-        product_id: Number(l.product_id),
+        ...(l.product_id ? { product_id: Number(l.product_id) } : { new_product_name: l.new_product_name }),
         quantity: Number(l.quantity),
         unit_price: Number(l.unit_price),
         discount: Number(l.discount) || 0,
@@ -421,6 +456,12 @@ export function InvoiceCreatePage() {
 
     if (items.length === 0) {
       setError('Please select at least one valid product line item.')
+      return
+    }
+
+    const unpriced = lines.find((l) => l.new_product_name && !(Number(l.unit_price) > 0))
+    if (unpriced) {
+      setError(`Enter a selling price for the new item "${unpriced.new_product_name}".`)
       return
     }
 
@@ -629,6 +670,7 @@ export function InvoiceCreatePage() {
                           index={index}
                           onSelectProduct={handleSelectProduct}
                           onClearProduct={handleClearProduct}
+                          onCreateNew={handleCreateNew}
                         />
                       </div>
 
