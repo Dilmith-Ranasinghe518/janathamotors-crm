@@ -437,7 +437,10 @@ class InvoiceController extends Controller
                 : null,
         ]);
 
-        return $pdf->download($isVat ? "{$invoice->invoice_no}-tax-invoice.pdf" : "{$invoice->invoice_no}.pdf");
+        // Invoice numbers may contain "/" (e.g. JMINV/2026/00010), which a download file name cannot.
+        $fileName = preg_replace('~[\\\\/:*?"<>|]+~', '-', $invoice->invoice_no);
+
+        return $pdf->download($isVat ? "{$fileName}-tax-invoice.pdf" : "{$fileName}.pdf");
     }
 
     /**
