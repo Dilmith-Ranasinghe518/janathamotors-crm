@@ -24,10 +24,10 @@ use App\Http\Controllers\Api\VehicleModelController;
 use App\Http\Controllers\Api\WhatsappOrderController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::get('/maintenance-status', [SettingController::class, 'publicStatus']);
 
-Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
+Route::middleware(['auth:sanctum', 'active', 'maintenance', 'throttle:api'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/user/password', [AuthController::class, 'updatePassword']);

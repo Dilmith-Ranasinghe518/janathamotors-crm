@@ -22,6 +22,8 @@ class RoleController extends Controller
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
+        $this->guardGrant($request, $data['permissions'] ?? []);
+
         $role = Role::create(['name' => $data['name'], 'guard_name' => 'web']);
         $role->syncPermissions($data['permissions'] ?? []);
 
@@ -43,6 +45,11 @@ class RoleController extends Controller
             'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
+        if ($role->name === 'Admin') {
+            return response()->json(['message' => 'The Admin role always has every permission and cannot be edited.'], 422);
+        }
+        $this->guardGrant($request, $data['permissions'] ?? []);
+
         $role->update(['name' => $data['name']]);
         $role->syncPermissions($data['permissions'] ?? []);
 
@@ -60,6 +67,20 @@ class RoleController extends Controller
         $role->delete();
 
         return response()->json(null, 204);
+    }
+
+    /** A non-Admin may only hand out permissions they hold themselves. */
+    private function guardGrant(Request $request, array $permissions): void
+    {
+        $user = $request->user();
+        if ($user->hasRole('Admin')) {
+            return;
+        }
+        foreach ($permissions as $permission) {
+            if (! $user->hasPermissionTo($permission)) {
+                abort(403, "You cannot grant the \"{$permission}\" permission.");
+            }
+        }
     }
 
     public function permissions()

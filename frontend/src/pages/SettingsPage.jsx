@@ -20,7 +20,8 @@ function UpdatePasswordForm() {
   const passwordMutation = useMutation({
     mutationFn: (payload) => api.put('/user/password', payload),
     onSuccess: () => {
-      setSuccess('Password updated successfully.')
+      setSuccess('Password updated successfully. Other devices have been signed out.')
+      localStorage.removeItem('jms_weak_password')
       setError('')
       setCurrentPassword('')
       setPassword('')
@@ -58,7 +59,7 @@ function UpdatePasswordForm() {
   return (
     <Card className="max-w-xl p-6">
       <h2 className="text-base font-bold text-[var(--ink)] mb-1">Update Password</h2>
-      <p className="text-xs text-[var(--muted)] mb-4">Ensure your account is using a secure password (minimum 8 characters).</p>
+      <p className="text-xs text-[var(--muted)] mb-4">Use at least 8 characters with both letters and numbers. Changing it signs out your other devices.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
@@ -157,6 +158,21 @@ function CompanySettingsForm() {
           <p className="mt-1 text-[11px] text-[var(--muted)]">Already included in selling prices — bills break it out, never add it on top.</p>
         </div>
         <Input label="Invoice prefix" value={form.invoice_prefix ?? ''} onChange={field('invoice_prefix')} />
+        <div>
+          <Input
+            label="Maximum discount without approval (%)"
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            placeholder="No limit"
+            value={form.max_discount_percent ?? ''}
+            onChange={field('max_discount_percent')}
+          />
+          <p className="mt-1 text-[11px] text-[var(--muted)]">
+            Staff without the “apply discount over limit” permission (e.g. Cashiers) can’t give more than this off a bill. Leave empty for no limit.
+          </p>
+        </div>
 
         <label className="md:col-span-2 flex flex-col gap-1 text-sm">
           <span className="font-medium text-[var(--ink)]">Bill footer notes (one per line)</span>

@@ -26,6 +26,7 @@ import {
   Users,
 } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
+import { printWritten } from '../lib/printWindow'
 import { Button, Card, EmptyState, Input, PageHeader, Select } from '../components/ui'
 
 const REPORT_GROUPS = [
@@ -139,7 +140,9 @@ export function ReportsPage() {
   }
 
   function exportCsv() {
-    const cell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    // Text starting with = + - @ would run as a formula in Excel: prefix ' (numbers are left alone).
+    const safe = (v) => (typeof v === 'string' && /^[=+\-@\t\r]/.test(v) && isNaN(Number(v)) ? `'${v}` : v)
+    const cell = (v) => `"${String(safe(v) ?? '').replace(/"/g, '""')}"`
     const lines = [report.columns.map((c) => cell(c.label)).join(',')]
     report.rows.forEach((r) => lines.push(report.columns.map((c) => cell(r[c.key])).join(',')))
     const totals = columnTotals(report)
@@ -187,9 +190,8 @@ export function ReportsPage() {
       ${totals ? `<tfoot><tr>${report.columns.map((c, i) => `<td style="text-align:${align(c)}">${i === 0 ? 'Total' : c.key in totals ? escapeHtml(formatValue(totals[c.key], c.type)) : ''}</td>`).join('')}</tr></tfoot>` : ''}
       </table>
       ${report.note ? `<p class="note">${escapeHtml(report.note)}</p>` : ''}
-      <script>window.onload = () => window.print()</script>
       </body></html>`)
-    win.document.close()
+    printWritten(win)
   }
 
   const totals = report ? columnTotals(report) : null

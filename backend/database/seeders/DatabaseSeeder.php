@@ -19,10 +19,18 @@ class DatabaseSeeder extends Seeder
         $this->call(RolePermissionSeeder::class);
         $this->call(StoreSeeder::class);
 
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@janathamotors.lk'],
-            ['name' => 'Janatha Motors Admin', 'password' => 'password', 'is_active' => true]
-        );
+        // No built-in default password: use ADMIN_PASSWORD from .env, or a random one shown once.
+        $admin = User::where('email', 'admin@janathamotors.lk')->first();
+        if (! $admin) {
+            $password = env('ADMIN_PASSWORD') ?: \Illuminate\Support\Str::password(16, symbols: false);
+            $admin = User::create([
+                'email' => 'admin@janathamotors.lk',
+                'name' => 'Janatha Motors Admin',
+                'password' => $password,
+                'is_active' => true,
+            ]);
+            $this->command?->warn('Admin account created: admin@janathamotors.lk / '.$password.' (change it after signing in)');
+        }
         $admin->assignRole('Admin');
 
         Setting::set('company_name', 'Janatha Motors');

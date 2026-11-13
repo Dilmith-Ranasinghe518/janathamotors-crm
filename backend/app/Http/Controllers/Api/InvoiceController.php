@@ -122,6 +122,7 @@ class InvoiceController extends Controller
                 fn ($item) => ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0)
             );
             $discount = $data['discount'] ?? 0;
+            $this->enforceDiscountLimit($data['items'], (float) $discount, $request);
             // Selling prices already include VAT: it is broken out of the total, never added on top.
             $tax = 0;
             $total = $subtotal - $discount;
@@ -291,6 +292,7 @@ class InvoiceController extends Controller
                 fn ($item) => ($item['quantity'] * $item['unit_price']) - ($item['discount'] ?? 0)
             );
             $discount = $data['discount'] ?? 0;
+            $this->enforceDiscountLimit($data['items'], (float) $discount, $request);
             // Selling prices already include VAT: it is broken out of the total, never added on top.
             $tax = 0;
             $total = $subtotal - $discount;
@@ -581,6 +583,39 @@ class InvoiceController extends Controller
         foreach ($created as [$product, $entry]) {
             $product->update(['source_invoice_id' => $invoice->id]);
             $entry->update(['reference_type' => Invoice::class, 'reference_id' => $invoice->id]);
+        }
+    }
+
+    /**
+     * Total discount on a bill, against the products' list (selling) prices: line discounts, the
+     * bill discount, and any unit price typed below the list price. Users without the
+     * "apply_discount_over_limit" permission are held to Settings → maximum discount %.
+     */
+    private function enforceDiscountLimit(array $items, float $billDiscount, Request $request): void
+    {
+        $limit = Setting::get('max_discount_percent');
+        if ($limit === null || $limit === '' || $request->user()->can('apply_discount_over_limit')) {
+            return;
+        }
+
+        $prices = Product::whereIn('id', collect($items)->pluck('product_id')->filter())->pluck('selling_price', 'id');
+        $listTotal = 0.0;
+        $charged = 0.0;
+        foreach ($items as $item) {
+            $listPrice = max((float) ($prices[$item['product_id']] ?? $item['unit_price']), (float) $item['unit_price']);
+            $listTotal += $item['quantity'] * $listPrice;
+            $charged += $item['quantity'] * $item['unit_price'] - ($item['discount'] ?? 0);
+        }
+        $charged -= $billDiscount;
+
+        if ($listTotal <= 0) {
+            return;
+        }
+        $percent = round(($listTotal - $charged) / $listTotal * 100, 2);
+        if ($percent > (float) $limit + 0.001) {
+            throw ValidationException::withMessages([
+                'discount' => ["This bill gives a {$percent}% discount; your limit is {$limit}%. Ask a manager to approve it."],
+            ]);
         }
     }
 

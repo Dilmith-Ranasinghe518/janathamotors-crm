@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    private const WEAK_PASSWORDS = ['password', 'password1', '12345678', '123456789', 'admin123', 'admin@123', 'qwerty123'];
+
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -46,6 +48,8 @@ class AuthController extends Controller
         return response()->json([
             'token' => $token,
             'user' => $this->formatUser($user),
+            // The app shows a "change your password" warning for well-known default passwords.
+            'weak_password' => in_array(strtolower($credentials['password']), self::WEAK_PASSWORDS, true),
         ]);
     }
 
@@ -65,7 +69,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
         ]);
 
         $user = $request->user();
@@ -79,7 +83,10 @@ class AuthController extends Controller
         $user->password = $request->password;
         $user->save();
 
-        return response()->json(['message' => 'Password updated successfully.']);
+        // Sign out every other device; this one stays signed in.
+        $user->tokens()->where('id', '!=', $user->currentAccessToken()?->id)->delete();
+
+        return response()->json(['message' => 'Password updated successfully. Other devices have been signed out.']);
     }
 
     protected function formatUser(User $user): array

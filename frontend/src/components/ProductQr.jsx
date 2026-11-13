@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { Download, Printer } from 'lucide-react'
 import { Button, Modal } from './ui'
 import { qrPayload } from '../lib/qr'
+import { printWritten } from '../lib/printWindow'
 
 /**
  * The QR carries Item Code, Item Name, Store and Store location (see qrPayload); scan inputs
@@ -51,9 +52,8 @@ export function ProductQrModal({ product, onClose }) {
         ${product.store ? `<div class="meta">Store: ${escapeHtml(product.store.code)}</div>` : ''}
         ${product.shelf_location ? `<div class="meta">Location: ${escapeHtml(product.shelf_location)}</div>` : ''}
       </div>
-      <script>window.onload = () => { window.print(); window.close(); }</script>
       </body></html>`)
-    win.document.close()
+    printWritten(win, { closeAfter: true })
   }
 
   function handleDownload() {
@@ -141,7 +141,6 @@ export function printQrSheet(products, win) {
       .loc { font-size: 6pt; color: #333; text-align: center; line-height: 1.1; word-break: break-word; }
       @media screen { body { background: #eee; } .page { background: #fff; margin: 8mm auto; padding: 6mm; width: 210mm; box-shadow: 0 1px 4px rgba(0,0,0,.2); } }
     </style></head><body>${pagesHtml}
-    <script>window.onload = () => window.print()</script>
     </body></html>`)
-  win.document.close()
+  printWritten(win)
 }

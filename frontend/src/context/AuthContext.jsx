@@ -34,6 +34,8 @@ export function AuthProvider({ children }) {
     const { data } = await api.post('/login', { email, password })
     localStorage.setItem('jms_token', data.token)
     localStorage.setItem('jms_user', JSON.stringify(data.user))
+    if (data.weak_password) localStorage.setItem('jms_weak_password', '1')
+    else localStorage.removeItem('jms_weak_password')
     setUser(data.user)
     return data.user
   }

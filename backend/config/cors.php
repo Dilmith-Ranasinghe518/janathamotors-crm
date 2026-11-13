@@ -19,7 +19,8 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => array_filter(explode(',', env('CORS_ALLOWED_ORIGINS', '*'))),
+    // Only the app's own address by default (the app and API share a domain); never '*'.
+    'allowed_origins' => array_filter(explode(',', env('CORS_ALLOWED_ORIGINS', env('APP_URL', 'http://localhost')))),
 
     'allowed_origins_patterns' => [],
 

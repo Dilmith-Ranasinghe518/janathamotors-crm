@@ -342,6 +342,14 @@ export function AppShell() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {localStorage.getItem('jms_weak_password') === '1' && location.pathname !== '/settings' && (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--critical)] bg-[var(--critical-soft)] px-4 py-3 text-sm font-semibold text-[var(--critical)]">
+              <span>You signed in with a well-known default password. Change it now to keep the system safe.</span>
+              <Link to="/settings" className="rounded-lg bg-[var(--critical)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90">
+                Change password
+              </Link>
+            </div>
+          )}
           <Outlet />
         </main>
       </div>

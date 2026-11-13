@@ -268,7 +268,7 @@ class ProductController extends Controller
             ]);
 
             foreach ($products as $p) {
-                fputcsv($file, [
+                fputcsv($file, $this->csvSafe([
                     $p->item_no,
                     $p->part_no ?? '',
                     $p->item_code ?? '',
@@ -286,11 +286,26 @@ class ProductController extends Controller
                     $p->reorder_level,
                     $p->unit ?? 'pc',
                     $p->created_at?->format('Y-m-d'),
-                ]);
+                ]));
             }
 
             fclose($file);
         }, 200, $headers);
+    }
+
+    /**
+     * Stop spreadsheet formula injection: a text cell starting with = + - @ (or a tab / CR) is
+     * prefixed with ' so Excel shows it as text instead of running it. Numbers are left alone.
+     */
+    private function csvSafe(array $row): array
+    {
+        return array_map(function ($value) {
+            if (is_string($value) && $value !== '' && ! is_numeric($value) && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+                return "'".$value;
+            }
+
+            return $value;
+        }, $row);
     }
 
     /**
@@ -372,7 +387,7 @@ class ProductController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => ['required', 'file', 'max:10240'],
+            'file' => ['required', 'file', 'max:10240', 'mimes:csv,txt', 'mimetypes:text/csv,text/plain,application/csv,application/vnd.ms-excel'],
             'update_existing' => ['nullable'],
         ]);
 

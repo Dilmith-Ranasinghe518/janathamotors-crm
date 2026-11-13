@@ -27,3 +27,16 @@ Artisan::command('invoices:reset-numbering', function () {
 
     return 0;
 })->purpose('Restart invoice numbering at 1 when there are no invoices');
+
+/*
+ * Activity-log retention: entries older than --days (default 365) are deleted.
+ */
+Artisan::command('activity-log:prune {--days=365}', function () {
+    $days = max((int) $this->option('days'), 30);
+    $deleted = \App\Models\AuditLog::where('created_at', '<', now()->subDays($days))->delete();
+    $this->info("Deleted {$deleted} activity-log entr".($deleted === 1 ? 'y' : 'ies')." older than {$days} days.");
+})->purpose('Delete activity-log entries older than the retention period');
+
+// Needs the server cron: * * * * * php /path/to/backend/artisan schedule:run
+\Illuminate\Support\Facades\Schedule::command('sanctum:prune-expired --hours=24')->daily();
+\Illuminate\Support\Facades\Schedule::command('activity-log:prune')->daily();

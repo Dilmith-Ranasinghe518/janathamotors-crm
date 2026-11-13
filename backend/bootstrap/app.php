@@ -17,7 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'maintenance' => \App\Http\Middleware\CheckMaintenanceMode::class,
+            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
+        // Security headers on every response, web (the app page) and API alike.
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         // Activity log: records changes, sign-ins and downloads after each API response.
         $middleware->api(append: [\App\Http\Middleware\LogActivity::class]);
     })
