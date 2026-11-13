@@ -56,10 +56,10 @@ class RolePermissionSeeder extends Seeder
 
         $cashier = Role::firstOrCreate(['name' => 'Cashier', 'guard_name' => 'web']);
         $cashier->syncPermissions([
-            'view_dashboard',
             'create_invoice',
-            'manage_customers',
             'manage_orders',
+            'manage_products',
+            'manage_stock',
         ]);
 
         $inventoryClerk = Role::firstOrCreate(['name' => 'Inventory Clerk', 'guard_name' => 'web']);

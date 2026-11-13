@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Product;
@@ -404,11 +403,7 @@ class InvoiceController extends Controller
                 $invoice->customer()->decrement('current_due', $invoice->due_amount);
             }
 
-            AuditLog::create([
-                'user_id' => $request->user()->id,
-                'action' => 'invoice.delete',
-                'model_type' => Invoice::class,
-                'model_id' => $invoice->id,
+            $request->attributes->set('activity', [
                 'changes' => [
                     'invoice_no' => $invoice->invoice_no,
                     'status' => $invoice->status,

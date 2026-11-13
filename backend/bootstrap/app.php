@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'maintenance' => \App\Http\Middleware\CheckMaintenanceMode::class,
         ]);
+        // Activity log: records changes, sign-ins and downloads after each API response.
+        $middleware->api(append: [\App\Http\Middleware\LogActivity::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

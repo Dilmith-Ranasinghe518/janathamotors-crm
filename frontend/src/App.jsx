@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from './context/ThemeContext'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AppShell } from './components/AppShell'
 import { LoginPage } from './pages/LoginPage'
@@ -22,10 +22,30 @@ import { StockTransfersPage } from './pages/StockTransfersPage'
 import { ShipmentsPage } from './pages/ShipmentsPage'
 import { WhatsappOrdersPage } from './pages/WhatsappOrdersPage'
 import { ReportsPage } from './pages/ReportsPage'
+import { ActivityLogPage } from './pages/ActivityLogPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 })
+
+// After login, go to the first page this user may open (Cashiers have no Dashboard).
+const HOME_PAGES = [
+  ['view_dashboard', '/dashboard'],
+  ['create_invoice', '/invoices'],
+  ['manage_orders', '/whatsapp-orders'],
+  ['manage_products', '/products'],
+  ['manage_stock', '/stock-transfers'],
+  ['manage_customers', '/customers'],
+  ['manage_suppliers', '/suppliers'],
+  ['manage_shipments', '/shipments'],
+  ['view_reports', '/reports'],
+]
+
+function HomeRedirect() {
+  const { can } = useAuth()
+  const target = HOME_PAGES.find(([permission]) => can(permission))?.[1] ?? '/settings'
+  return <Navigate to={target} replace />
+}
 
 function NotFound() {
   return (
@@ -47,8 +67,10 @@ export default function App() {
 
               <Route element={<ProtectedRoute />}>
                 <Route element={<AppShell />}>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/" element={<HomeRedirect />} />
+                  <Route element={<ProtectedRoute permission="view_dashboard" />}>
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                  </Route>
 
                   <Route element={<ProtectedRoute permission="create_invoice" />}>
                     <Route path="/invoices" element={<InvoicesPage />} />
@@ -93,6 +115,10 @@ export default function App() {
 
                   <Route element={<ProtectedRoute permission="manage_users" />}>
                     <Route path="/users" element={<UsersPage />} />
+                  </Route>
+
+                  <Route element={<ProtectedRoute role="Admin" />}>
+                    <Route path="/activity-log" element={<ActivityLogPage />} />
                   </Route>
 
                   <Route element={<ProtectedRoute permission="manage_roles" />}>

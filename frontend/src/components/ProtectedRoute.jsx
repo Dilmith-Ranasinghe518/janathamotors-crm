@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-export function ProtectedRoute({ permission }) {
+export function ProtectedRoute({ permission, role }) {
   const { user, loading, can } = useAuth()
 
   if (loading) {
@@ -14,7 +14,7 @@ export function ProtectedRoute({ permission }) {
 
   if (!user) return <Navigate to="/login" replace />
 
-  if (permission && !can(permission)) {
+  if ((permission && !can(permission)) || (role && !user.roles?.includes(role))) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-2 text-center">
         <p className="text-lg font-semibold text-[var(--ink)]">Access restricted</p>

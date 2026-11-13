@@ -14,6 +14,7 @@ import {
   Ship,
   MessageCircle,
   BarChart3,
+  History,
   UserCheck,
   Shield,
   Settings,
@@ -46,6 +47,7 @@ const NAV = [
   { to: '/reports', label: 'Reports', permission: 'view_reports', icon: BarChart3 },
   { to: '/users', label: 'Users', permission: 'manage_users', icon: UserCheck },
   { to: '/roles', label: 'Roles & Permissions', permission: 'manage_roles', icon: Shield },
+  { to: '/activity-log', label: 'Activity Log', role: 'Admin', icon: History },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
@@ -110,7 +112,9 @@ export function AppShell() {
     setMobileOpen(false)
   }, [location.pathname])
 
-  const visibleNavItems = NAV.filter((item) => !item.permission || can(item.permission))
+  const visibleNavItems = NAV.filter(
+    (item) => (!item.permission || can(item.permission)) && (!item.role || user?.roles?.includes(item.role))
+  )
 
   return (
     <div className="flex min-h-screen bg-[var(--paper)] text-[var(--ink)]">

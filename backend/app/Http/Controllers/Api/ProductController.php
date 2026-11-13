@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\AuditLog;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -187,10 +186,8 @@ class ProductController extends Controller
                 $summary['products_deleted'] = Product::whereNotIn('id', $usedIds)->delete();
             }
 
-            AuditLog::create([
-                'user_id' => $request->user()->id,
+            $request->attributes->set('activity', [
                 'action' => $data['mode'] === 'products' ? 'inventory.flush_products' : 'inventory.flush_stock',
-                'model_type' => Product::class,
                 'changes' => $summary,
             ]);
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CategoryController;
@@ -61,8 +62,13 @@ Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
     Route::apiResource('suppliers', SupplierController::class)->middleware('permission:manage_suppliers');
     Route::apiResource('purchases', PurchaseController::class)->only(['index', 'store', 'show'])->middleware('permission:manage_suppliers');
 
-    Route::apiResource('customers', CustomerController::class)->middleware('permission:manage_customers');
-    Route::apiResource('stores', StoreController::class)->middleware('permission:manage_stores');
+    // Reading the customer / store lists is also needed by pages that are not the Customers or
+    // Stores page (billing, inventory, transfers, shipments, reports); changing them is not.
+    Route::get('/customers', [CustomerController::class, 'index'])->middleware('permission:manage_customers|create_invoice');
+    Route::apiResource('customers', CustomerController::class)->except(['index'])->middleware('permission:manage_customers');
+    Route::get('/stores', [StoreController::class, 'index'])
+        ->middleware('permission:manage_stores|manage_products|manage_stock|create_invoice|manage_shipments|view_reports');
+    Route::apiResource('stores', StoreController::class)->except(['index'])->middleware('permission:manage_stores');
 
     Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show', 'update'])->middleware('permission:create_invoice');
     Route::post('/invoices/{invoice}/void', [InvoiceController::class, 'void'])->middleware('permission:void_invoice');
@@ -71,6 +77,7 @@ Route::middleware(['auth:sanctum', 'maintenance'])->group(function () {
     Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])->middleware('permission:create_invoice');
 
     Route::apiResource('users', UserController::class)->middleware('permission:manage_users');
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->middleware('role:Admin');
     Route::apiResource('roles', RoleController::class)->middleware('permission:manage_roles');
     Route::get('/permissions', [RoleController::class, 'permissions'])->middleware('permission:manage_roles');
 
