@@ -2,11 +2,10 @@ import clsx from 'clsx'
 import calcifyLogo from '../assets/calcify-logo.png'
 
 const CALCIFY_URL = 'https://calcifyint.com'
-const CALCIFY_PHONE = '+94 70 160 0215'
 
 /**
- * "Software by Calcify Int" credit with its contact number.
- * `compact` shows only the logo (collapsed sidebar); the tooltip carries the details.
+ * "Software by Calcify Int" credit (the contact number is printed on bills only).
+ * `compact` shows only the logo (collapsed sidebar).
  */
 export function SoftwareCredit({ compact = false, className }) {
   return (
@@ -15,7 +14,7 @@ export function SoftwareCredit({ compact = false, className }) {
         href={CALCIFY_URL}
         target="_blank"
         rel="noopener noreferrer"
-        title={`Software by Calcify Int · ${CALCIFY_PHONE}`}
+        title="Software by Calcify Int"
         className="h-6 w-6 shrink-0 overflow-hidden rounded-md shadow-xs"
       >
         {/* calcifyint.com favicon */}
@@ -31,12 +30,6 @@ export function SoftwareCredit({ compact = false, className }) {
             className="font-semibold transition hover:text-[var(--ink)] hover:underline"
           >
             Calcify Int
-          </a>
-          <a
-            href={`tel:${CALCIFY_PHONE.replace(/\s/g, '')}`}
-            className="block font-mono transition hover:text-[var(--ink)] hover:underline"
-          >
-            {CALCIFY_PHONE}
           </a>
         </span>
       )}
