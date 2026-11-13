@@ -450,7 +450,7 @@ export function ProductsPage() {
                 <th className="px-4 py-3 whitespace-nowrap">Item Code</th>
                 <th className="px-4 py-3 whitespace-nowrap">Part No</th>
                 <th className="px-4 py-3 whitespace-nowrap">QR</th>
-                <th className="px-4 py-3 whitespace-nowrap">Name & Brand</th>
+                <th className="px-4 py-3 whitespace-nowrap min-w-[280px]">Name & Brand</th>
                 <th className="px-4 py-3 whitespace-nowrap">Store Location</th>
                 <th className="px-4 py-3 whitespace-nowrap">Vehicle Compatibility</th>
                 <th className="px-4 py-3 text-right whitespace-nowrap">Stock</th>
@@ -465,12 +465,15 @@ export function ProductsPage() {
                 <tr key={p.id} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)]/40 transition">
                   <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap text-[var(--muted)]">{p.item_no}</td>
                   <td className="px-4 py-3.5 font-mono text-xs font-semibold whitespace-nowrap text-[var(--ink)]">{p.item_code || '—'}</td>
-                  <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap text-[var(--ink)]">{p.part_no || <span className="text-[var(--muted)]">—</span>}</td>
+                  <td className="px-4 py-3.5 font-mono text-xs text-[var(--ink)] min-w-[140px] max-w-[190px] break-words">
+                    {/* long multi-part numbers wrap at the slashes instead of squeezing the name column */}
+                    {p.part_no ? p.part_no.split('/').join('/\u200b') : <span className="text-[var(--muted)]">—</span>}
+                  </td>
                   <td className="px-4 py-3.5">
                     <ProductQrThumb product={p} onClick={() => setQrProduct(p)} />
                   </td>
-                  <td className="px-4 py-3.5">
-                    <div className="font-bold text-[var(--ink)] leading-snug">
+                  <td className="px-4 py-3.5 min-w-[280px]">
+                    <div className="text-[13px] font-semibold text-[var(--ink)] leading-snug">
                       {p.name}
                       {p.stock_on_hand <= p.reorder_level && (
                         <span className="ml-2 rounded-full bg-[var(--critical-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--critical)] uppercase tracking-wider">

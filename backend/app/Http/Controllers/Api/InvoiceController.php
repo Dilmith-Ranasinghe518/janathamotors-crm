@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Product;
@@ -368,6 +369,47 @@ class InvoiceController extends Controller
         });
 
         return response()->json($invoice->fresh(['items.product', 'customer']));
+    }
+
+    /**
+     * Admin only: permanently delete an invoice in any status. Its stock movements (sales, and any
+     * returns from edits or a void) are removed, which puts the stock back exactly as it was before
+     * the sale; its payments go too, and an unpaid balance comes off the customer's account.
+     */
+    public function destroy(Request $request, Invoice $invoice)
+    {
+        DB::transaction(function () use ($invoice, $request) {
+            $restored = StockLedger::where('reference_type', Invoice::class)
+                ->where('reference_id', $invoice->id)
+                ->sum('quantity');
+
+            StockLedger::where('reference_type', Invoice::class)->where('reference_id', $invoice->id)->delete();
+
+            // A voided invoice already took its balance off the customer; an open one has not.
+            if ($invoice->status !== 'cancelled' && $invoice->customer_id && $invoice->due_amount > 0) {
+                $invoice->customer()->decrement('current_due', $invoice->due_amount);
+            }
+
+            AuditLog::create([
+                'user_id' => $request->user()->id,
+                'action' => 'invoice.delete',
+                'model_type' => Invoice::class,
+                'model_id' => $invoice->id,
+                'changes' => [
+                    'invoice_no' => $invoice->invoice_no,
+                    'status' => $invoice->status,
+                    'total' => $invoice->total,
+                    'customer' => $invoice->customer_name,
+                    'stock_units_restored' => (int) -$restored,
+                ],
+            ]);
+
+            $invoice->payments()->delete();
+            $invoice->items()->delete();
+            $invoice->delete();
+        });
+
+        return response()->json(null, 204);
     }
 
     /**

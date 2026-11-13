@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Eye, FileDown, Pencil, Trash2, Plus, CreditCard, Search, X, ChevronLeft, ChevronRight } from 'lucide-react'
-import { api } from '../lib/api'
+import { Ban, Eye, FileDown, Pencil, Trash2, Plus, CreditCard, Search, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { api, apiErrorMessage } from '../lib/api'
 import { Card, EmptyState, Input, PageHeader, Select, StatusBadge } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 
 const emptyFilters = { status: '', type: '', store_id: '', from: '', to: '' }
 
 export function InvoicesPage() {
-  const { can } = useAuth()
+  const { can, user } = useAuth()
+  const isAdmin = Boolean(user?.roles?.includes('Admin'))
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -71,6 +72,12 @@ export function InvoicesPage() {
     },
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => api.delete(`/invoices/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invoices'] }),
+    onError: (err) => alert(apiErrorMessage(err, 'Could not delete the invoice.')),
+  })
+
   const invoices = invoicesQuery.data?.data ?? []
 
   // type: 'normal' bill or 'vat' tax invoice
@@ -86,6 +93,12 @@ export function InvoicesPage() {
       window.open(url, '_blank')
     } finally {
       setDownloadingId(null)
+    }
+  }
+
+  function handleDelete(inv) {
+    if (window.confirm(`Permanently delete ${inv.invoice_no}? This cannot be undone.\n\nIts stock is put back, its payments are removed and any unpaid balance comes off the customer's account.`)) {
+      deleteMutation.mutate(inv.id)
     }
   }
 
@@ -270,7 +283,19 @@ export function InvoicesPage() {
                           onClick={() => handleVoid(inv)}
                           disabled={voidMutation.isPending}
                           className="flex items-center gap-1 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2 py-1 text-xs font-bold text-[var(--critical)] hover:bg-[var(--critical-soft)] transition shadow-2xs disabled:opacity-50"
-                          title="Void / Delete invoice"
+                          title="Void invoice (cancel it and restore stock; it stays on record)"
+                        >
+                          <Ban className="h-3.5 w-3.5" />
+                          <span>Void</span>
+                        </button>
+                      )}
+
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDelete(inv)}
+                          disabled={deleteMutation.isPending}
+                          className="flex items-center gap-1 rounded-lg border border-[var(--critical)] bg-[var(--critical-soft)] px-2 py-1 text-xs font-bold text-[var(--critical)] hover:opacity-80 transition shadow-2xs disabled:opacity-50"
+                          title="Admin only: permanently delete this invoice"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                           <span>Delete</span>

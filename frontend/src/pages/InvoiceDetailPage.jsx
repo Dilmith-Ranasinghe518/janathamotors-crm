@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
@@ -8,7 +8,9 @@ import { useAuth } from '../context/AuthContext'
 
 export function InvoiceDetailPage() {
   const { id } = useParams()
-  const { can } = useAuth()
+  const { can, user } = useAuth()
+  const isAdmin = Boolean(user?.roles?.includes('Admin'))
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [payOpen, setPayOpen] = useState(false)
   const [amount, setAmount] = useState('')
@@ -29,6 +31,15 @@ export function InvoiceDetailPage() {
       setAmount('')
     },
     onError: (err) => setError(apiErrorMessage(err, 'Could not record payment.')),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => api.delete(`/invoices/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] })
+      navigate('/invoices')
+    },
+    onError: (err) => alert(apiErrorMessage(err, 'Could not delete the invoice.')),
   })
 
   const voidMutation = useMutation({
@@ -84,6 +95,15 @@ export function InvoiceDetailPage() {
             {invoice.status !== 'cancelled' && can('void_invoice') && (
               <Button variant="danger" onClick={() => window.confirm('Void this invoice and restore stock?') && voidMutation.mutate()}>
                 Void invoice
+              </Button>
+            )}
+            {isAdmin && (
+              <Button
+                variant="danger"
+                disabled={deleteMutation.isPending}
+                onClick={() => window.confirm(`Permanently delete ${invoice.invoice_no}? This cannot be undone.\n\nIts stock is put back, its payments are removed and any unpaid balance comes off the customer's account.`) && deleteMutation.mutate()}
+              >
+                {deleteMutation.isPending ? 'Deleting…' : 'Delete invoice'}
               </Button>
             )}
           </>

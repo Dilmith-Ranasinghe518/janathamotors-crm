@@ -282,7 +282,9 @@ export function InvoiceCreatePage() {
   const [paymentMode, setPaymentMode] = useState(searchParams.get('type') === 'credit' ? 'credit' : 'cash')
   const [additionalInfo, setAdditionalInfo] = useState('')
   const [paidAmount, setPaidAmount] = useState('0')
-  const [isFullyPaid, setIsFullyPaid] = useState(false)
+  // New sales invoices default to fully paid (the amount paid follows the total);
+  // credit bills start unpaid, and an edited invoice takes its saved state.
+  const [isFullyPaid, setIsFullyPaid] = useState(() => !isEdit && searchParams.get('type') !== 'credit')
   const [error, setError] = useState('')
 
   const customersQuery = useQuery({ queryKey: ['customers', 'all'], queryFn: () => api.get('/customers').then((r) => r.data) })
