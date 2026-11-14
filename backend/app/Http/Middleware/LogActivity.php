@@ -34,7 +34,7 @@ class LogActivity
         'void' => 'Voided', 'payments' => 'Recorded payment on', 'adjust-stock' => 'Adjusted stock of',
         'move' => 'Moved', 'status' => 'Changed status of', 'import' => 'Imported', 'flush' => 'Flushed',
         'maintenance' => 'Toggled maintenance mode in', 'password' => 'Changed password of',
-        'pdf' => 'Downloaded PDF of', 'export' => 'Exported', 'template' => 'Downloaded import template of',
+        'pdf' => 'Downloaded PDF of', 'delivery-note' => 'Printed delivery note for', 'export' => 'Exported', 'template' => 'Downloaded import template of',
     ];
 
     private const HIDDEN_INPUT = ['password', 'password_confirmation', 'current_password', 'token'];
@@ -66,7 +66,7 @@ class LogActivity
             return false;
         }
         if ($request->isMethod('GET')) {
-            return (bool) preg_match('~/(pdf|export|template)$~', $path);
+            return (bool) preg_match('~/(pdf|delivery-note|export|template)$~', $path);
         }
 
         return true;

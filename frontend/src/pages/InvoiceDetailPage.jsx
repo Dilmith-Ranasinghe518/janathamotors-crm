@@ -50,7 +50,7 @@ export function InvoiceDetailPage() {
   async function downloadPdf(type = 'normal') {
     setDownloading(type)
     try {
-      const response = await api.get(`/invoices/${id}/pdf`, {
+      const response = await api.get(`/invoices/${id}/${type === 'delivery' ? 'delivery-note' : 'pdf'}`, {
         params: { type: type === 'vat' ? 'vat' : undefined },
         responseType: 'blob',
       })
@@ -84,6 +84,12 @@ export function InvoiceDetailPage() {
             <Button variant="secondary" onClick={() => downloadPdf('normal')} disabled={Boolean(downloading)}>
               {downloading === 'normal' ? 'Preparing…' : 'PDF'}
             </Button>
+            {(invoice.customer_name || invoice.customer?.name) &&
+              (invoice.customer_address || invoice.customer?.address || invoice.customer_phone || invoice.customer?.phone) && (
+                <Button variant="secondary" onClick={() => downloadPdf('delivery')} disabled={Boolean(downloading)}>
+                  {downloading === 'delivery' ? 'Preparing…' : 'Delivery Note'}
+                </Button>
+              )}
             {(invoice.customer_tin || invoice.customer?.tin) && (
               <Button variant="secondary" onClick={() => downloadPdf('vat')} disabled={Boolean(downloading)}>
                 {downloading === 'vat' ? 'Preparing…' : 'VAT Bill'}

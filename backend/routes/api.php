@@ -74,6 +74,7 @@ Route::middleware(['auth:sanctum', 'active', 'maintenance', 'throttle:api'])->gr
     Route::post('/invoices/{invoice}/void', [InvoiceController::class, 'void'])->middleware('permission:void_invoice');
     Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->middleware('role:Admin');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->middleware('permission:create_invoice');
+    Route::get('/invoices/{invoice}/delivery-note', [InvoiceController::class, 'deliveryNote'])->middleware('permission:create_invoice');
     Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])->middleware('permission:create_invoice');
 
     Route::apiResource('users', UserController::class)->middleware('permission:manage_users');

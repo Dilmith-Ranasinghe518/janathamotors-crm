@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Ban, Eye, FileDown, Pencil, Trash2, Plus, CreditCard, Search, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Ban, Eye, FileDown, Pencil, Trash2, Truck, Plus, CreditCard, Search, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Card, EmptyState, Input, PageHeader, Select, StatusBadge } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
+
+/** A delivery note needs the customer's name plus an address or phone number. */
+function hasDeliveryDetails(inv) {
+  const name = inv.customer_name || inv.customer?.name
+  return Boolean(name && (inv.customer_address || inv.customer?.address || inv.customer_phone || inv.customer?.phone))
+}
 
 const emptyFilters = { status: '', type: '', store_id: '', from: '', to: '' }
 
@@ -84,7 +90,7 @@ export function InvoicesPage() {
   async function openPdf(inv, type = 'normal') {
     setDownloadingId(`${inv.id}-${type}`)
     try {
-      const response = await api.get(`/invoices/${inv.id}/pdf`, {
+      const response = await api.get(`/invoices/${inv.id}/${type === 'delivery' ? 'delivery-note' : 'pdf'}`, {
         params: { type: type === 'vat' ? 'vat' : undefined },
         responseType: 'blob',
       })
@@ -256,6 +262,18 @@ export function InvoicesPage() {
                         <FileDown className="h-3.5 w-3.5" />
                         <span>{downloadingId === `${inv.id}-normal` ? '…' : 'PDF'}</span>
                       </button>
+
+                      {hasDeliveryDetails(inv) && (
+                        <button
+                          onClick={() => openPdf(inv, 'delivery')}
+                          disabled={downloadingId === `${inv.id}-delivery`}
+                          className="flex items-center gap-1 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-bold text-[var(--accent-2)] hover:bg-[var(--accent-soft)] transition shadow-2xs disabled:opacity-50"
+                          title="Print delivery note (From / To label)"
+                        >
+                          <Truck className="h-3.5 w-3.5" />
+                          <span>{downloadingId === `${inv.id}-delivery` ? '…' : 'Delivery Note'}</span>
+                        </button>
+                      )}
 
                       {(inv.customer_tin || inv.customer?.tin) && (
                       <button

@@ -174,6 +174,22 @@ function CompanySettingsForm() {
           </p>
         </div>
 
+        <p className="md:col-span-2 mt-2 text-xs font-bold uppercase tracking-wider text-[var(--muted)]">Delivery note</p>
+        <Input
+          label="Delivery note tagline"
+          className="md:col-span-2"
+          placeholder="e.g. Importers & Dealers in Genuine Parts Wholesale and Retail"
+          value={form.delivery_tagline ?? ''}
+          onChange={field('delivery_tagline')}
+        />
+        <Input
+          label="Brands shown on delivery note (comma separated)"
+          className="md:col-span-2"
+          placeholder="e.g. Mitsubishi Motors, Daihatsu, Perodua, Fiat, Toyota"
+          value={form.delivery_brands ?? ''}
+          onChange={field('delivery_brands')}
+        />
+
         <label className="md:col-span-2 flex flex-col gap-1 text-sm">
           <span className="font-medium text-[var(--ink)]">Bill footer notes (one per line)</span>
           <textarea

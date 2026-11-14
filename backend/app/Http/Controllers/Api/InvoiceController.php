@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Setting;
 use App\Models\StockLedger;
+use App\Models\WhatsappOrder;
 use App\Models\Store;
 use App\Support\AmountInWords;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -23,7 +24,7 @@ class InvoiceController extends Controller
     public function index(Request $request)
     {
         return Invoice::query()
-            ->with('customer:id,name,phone,tin')
+            ->with('customer:id,name,phone,tin,address')
             ->when($request->integer('customer_id'), fn ($q, $id) => $q->where('customer_id', $id))
             ->when($request->string('status')->isNotEmpty(), fn ($q) => $q->where('status', $request->string('status')))
             ->when($request->filled('type'), fn ($q) => $q->where('is_credit', $request->input('type') === 'credit'))
@@ -426,6 +427,51 @@ class InvoiceController extends Controller
     /**
      * Download the bill as PDF: the normal bill, or (?type=vat) the tax invoice when the purchaser has a TIN.
      */
+    /**
+     * Delivery note / parcel label (From: us, To: the customer). The destination comes from the
+     * invoice's WhatsApp order if it has one, otherwise from the invoice / customer record.
+     */
+    public function deliveryNote(Invoice $invoice)
+    {
+        $invoice->load('customer');
+        $order = WhatsappOrder::where('invoice_id', $invoice->id)->latest('id')->first();
+
+        $name = $order?->customer_name ?: ($invoice->customer_name ?: $invoice->customer?->name);
+        $address = $order?->shipping_address ?: ($invoice->customer_address ?: $invoice->customer?->address);
+        $phone = $order?->customer_phone ?: ($invoice->customer_phone ?: $invoice->customer?->phone);
+
+        if (blank($name) || (blank($address) && blank($phone))) {
+            return response()->json([
+                'message' => 'Add the customer\'s name and an address or phone number to the invoice to print a delivery note.',
+            ], 422);
+        }
+
+        $shipping = null;
+        if ($order) {
+            $partner = ['pickme' => 'PickMe', 'uber' => 'Uber', 'dhl' => 'DHL', 'prompt_xp' => 'Prompt XP', 'pronto' => 'Pronto', 'domex' => 'Domex'][$order->shipping_partner] ?? $order->shipping_partner;
+            $detail = $order->tracking_no ?: trim(implode(' · ', array_filter([$order->vehicle_no, $order->driver_name, $order->driver_mobile])));
+            $shipping = trim($partner.($detail ? " ({$detail})" : ''));
+        }
+
+        $company = $this->companyDetails();
+        $pdf = Pdf::loadView('invoices.delivery', [
+            'invoice' => $invoice,
+            'company' => $company,
+            'brands' => array_values(array_filter(array_map('trim', explode(',', (string) $company['delivery_brands'])))),
+            'recipient' => [
+                'name' => $name,
+                // Commas or new lines split the address over several lines on the label.
+                'address_lines' => array_values(array_filter(array_map('trim', preg_split('/\r?\n|,(?=\s*[A-Za-z0-9])/', (string) $address)))),
+                'phone' => $phone,
+            ],
+            'shipping' => $shipping,
+        ])->setPaper('a5', 'portrait');
+
+        $fileName = preg_replace('~[\\\\/:*?"<>|]+~', '-', $invoice->invoice_no);
+
+        return $pdf->download("{$fileName}-delivery-note.pdf");
+    }
+
     public function pdf(Request $request, Invoice $invoice)
     {
         $invoice->load(['items.product.brand', 'items.product.vehicleBrand', 'items.product.vehicleModel', 'customer', 'creator:id,name']);
@@ -490,6 +536,8 @@ class InvoiceController extends Controller
             'vat_reg_no' => Setting::get('vat_reg_no'),
             'business_reg_no' => Setting::get('business_reg_no'),
             'footer_note' => Setting::get('invoice_footer_note'),
+            'delivery_tagline' => Setting::get('delivery_tagline'),
+            'delivery_brands' => Setting::get('delivery_brands'),
         ];
     }
 
