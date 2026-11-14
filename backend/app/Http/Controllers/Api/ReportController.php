@@ -353,7 +353,7 @@ class ReportController extends Controller
 
     private function whatsappOrders(Carbon $from, Carbon $to, $storeId): array
     {
-        $partners = ['pickme' => 'PickMe', 'uber' => 'Uber', 'dhl' => 'DHL', 'prompt_xp' => 'Prompt XP', 'pronto' => 'Pronto', 'domex' => 'Domex'];
+        $partners = ['pickme' => 'PickMe', 'uber' => 'Uber', 'bus' => 'Bus', 'dhl' => 'DHL', 'prompt_xp' => 'Prompt XP', 'pronto' => 'Pronto', 'domex' => 'Domex'];
 
         $rows = DB::table('whatsapp_orders as o')
             ->leftJoin('invoices as i', 'i.id', '=', 'o.invoice_id')

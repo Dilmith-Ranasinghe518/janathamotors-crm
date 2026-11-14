@@ -448,8 +448,8 @@ class InvoiceController extends Controller
 
         $shipping = null;
         if ($order) {
-            $partner = ['pickme' => 'PickMe', 'uber' => 'Uber', 'dhl' => 'DHL', 'prompt_xp' => 'Prompt XP', 'pronto' => 'Pronto', 'domex' => 'Domex'][$order->shipping_partner] ?? $order->shipping_partner;
-            $detail = $order->tracking_no ?: trim(implode(' · ', array_filter([$order->vehicle_no, $order->driver_name, $order->driver_mobile])));
+            $partner = ['pickme' => 'PickMe', 'uber' => 'Uber', 'bus' => 'Bus', 'dhl' => 'DHL', 'prompt_xp' => 'Prompt XP', 'pronto' => 'Pronto', 'domex' => 'Domex'][$order->shipping_partner] ?? $order->shipping_partner;
+            $detail = $order->tracking_no ?: trim(implode(' · ', array_filter([$order->bus_route, $order->vehicle_no, $order->driver_name, $order->driver_mobile])));
             $shipping = trim($partner.($detail ? " ({$detail})" : ''));
         }
 

@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
-import { Bike, MessageCircle, Plus, Search, Truck, X } from 'lucide-react'
+import { Bike, Bus, MessageCircle, Plus, Search, Truck, X } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 
 const PARTNERS = [
   { value: 'pickme', label: 'PickMe', ride: true },
   { value: 'uber', label: 'Uber', ride: true },
+  { value: 'bus', label: 'Bus' },
   { value: 'dhl', label: 'DHL' },
   { value: 'prompt_xp', label: 'Prompt XP' },
   { value: 'pronto', label: 'Pronto' },
@@ -15,6 +16,7 @@ const PARTNERS = [
 ]
 const partnerLabel = (v) => PARTNERS.find((p) => p.value === v)?.label ?? v
 const isRidePartner = (v) => Boolean(PARTNERS.find((p) => p.value === v)?.ride)
+const isBus = (v) => v === 'bus'
 
 const VEHICLE_TYPES = [
   { value: 'bike', label: 'Bike' },
@@ -40,6 +42,7 @@ const emptyForm = {
   shipping_partner: '',
   tracking_no: '',
   vehicle_type: '',
+  bus_route: '',
   vehicle_no: '',
   driver_name: '',
   driver_mobile: '',
@@ -124,6 +127,7 @@ export function WhatsappOrdersPage() {
       shipping_partner: order.shipping_partner,
       tracking_no: order.tracking_no ?? '',
       vehicle_type: order.vehicle_type ?? '',
+      bus_route: order.bus_route ?? '',
       vehicle_no: order.vehicle_no ?? '',
       driver_name: order.driver_name ?? '',
       driver_mobile: order.driver_mobile ?? '',
@@ -168,6 +172,7 @@ export function WhatsappOrdersPage() {
       ...form,
       tracking_no: nullable(form.tracking_no),
       vehicle_type: nullable(form.vehicle_type),
+      bus_route: nullable(form.bus_route),
     })
   }
 
@@ -269,7 +274,17 @@ export function WhatsappOrdersPage() {
                     </td>
                     <td className="px-4 py-3.5 text-xs font-semibold whitespace-nowrap text-[var(--ink)]">{partnerLabel(o.shipping_partner)}</td>
                     <td className="px-4 py-3.5 text-xs whitespace-nowrap">
-                      {isRidePartner(o.shipping_partner) ? (
+                      {isBus(o.shipping_partner) ? (
+                        <>
+                          <div className="flex items-center gap-1 font-semibold text-[var(--ink)]">
+                            <Bus className="h-3 w-3" />
+                            {o.bus_route || 'Bus'} {o.vehicle_no && <span className="font-mono">· {o.vehicle_no}</span>}
+                          </div>
+                          {(o.driver_name || o.driver_mobile) && (
+                            <div className="text-[var(--muted)]">{[o.driver_name, o.driver_mobile].filter(Boolean).join(' · ')}</div>
+                          )}
+                        </>
+                      ) : isRidePartner(o.shipping_partner) ? (
                         <>
                           <div className="flex items-center gap-1 font-semibold text-[var(--ink)]">
                             {o.vehicle_type === 'lorry' ? <Truck className="h-3 w-3" /> : <Bike className="h-3 w-3" />}
@@ -363,6 +378,13 @@ export function WhatsappOrdersPage() {
                 <Input label="Vehicle number" placeholder="e.g. BHK-4521" {...field('vehicle_no')} />
                 <Input label="Driver name" {...field('driver_name')} />
                 <Input label="Driver mobile number" placeholder="07X XXX XXXX" {...field('driver_mobile')} />
+              </>
+            ) : isBus(form.shipping_partner) ? (
+              <>
+                <Input label="Bus route *" required placeholder="e.g. 138 Colombo – Kandy" {...field('bus_route')} />
+                <Input label="Bus number" placeholder="e.g. NB-1234" {...field('vehicle_no')} />
+                <Input label="Driver / conductor name" {...field('driver_name')} />
+                <Input label="Driver / conductor mobile" placeholder="07X XXX XXXX" {...field('driver_mobile')} />
               </>
             ) : (
               form.shipping_partner && <Input label="Tracking number" className="col-span-2" {...field('tracking_no')} />

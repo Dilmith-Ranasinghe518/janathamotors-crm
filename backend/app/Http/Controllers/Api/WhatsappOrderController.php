@@ -22,6 +22,7 @@ class WhatsappOrderController extends Controller
                 $term = '%'.$request->string('search')->trim().'%';
                 $q->where(fn ($q) => $q->where('order_no', 'like', $term)
                     ->orWhere('tracking_no', 'like', $term)
+                    ->orWhere('bus_route', 'like', $term)
                     ->orWhere('customer_name', 'like', $term)
                     ->orWhere('customer_phone', 'like', $term)
                     ->orWhere('vehicle_no', 'like', $term)
@@ -92,6 +93,7 @@ class WhatsappOrderController extends Controller
     private function validated(Request $request): array
     {
         $isRide = in_array($request->input('shipping_partner'), WhatsappOrder::RIDE_PARTNERS, true);
+        $isBus = $request->input('shipping_partner') === WhatsappOrder::BUS_PARTNER;
 
         $data = $request->validate([
             'invoice_id' => ['required', 'exists:invoices,id'],
@@ -102,6 +104,7 @@ class WhatsappOrderController extends Controller
             'vehicle_no' => ['nullable', 'string', 'max:50'],
             'driver_name' => ['nullable', 'string', 'max:255'],
             'driver_mobile' => ['nullable', 'string', 'max:30'],
+            'bus_route' => [Rule::requiredIf($isBus), 'nullable', 'string', 'max:255'],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:30'],
             'shipping_address' => ['nullable', 'string'],
@@ -111,9 +114,12 @@ class WhatsappOrderController extends Controller
 
         // Keep only the delivery fields that apply to the chosen partner.
         if ($isRide) {
+            $data['tracking_no'] = $data['bus_route'] = null;
+        } elseif ($isBus) {
             $data['tracking_no'] = null;
+            $data['vehicle_type'] = 'bus';
         } else {
-            $data['vehicle_type'] = $data['vehicle_no'] = $data['driver_name'] = $data['driver_mobile'] = null;
+            $data['vehicle_type'] = $data['vehicle_no'] = $data['driver_name'] = $data['driver_mobile'] = $data['bus_route'] = null;
         }
 
         return $data;
