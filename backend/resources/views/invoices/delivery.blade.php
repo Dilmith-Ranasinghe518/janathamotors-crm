@@ -8,11 +8,12 @@
     body { font-family: Helvetica, Arial, sans-serif; color: #c62828; }
     .label { font-size: 15px; font-weight: bold; margin: 0; }
     .from-block { text-align: center; margin-top: 2px; }
-    .name { font-size: 30px; font-weight: bold; margin: 0 0 6px; letter-spacing: 0.3px; }
+    .name { font-size: 27px; font-weight: bold; margin: 0 0 6px; letter-spacing: 0.3px; }
     .tagline { font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
     .line { font-size: 10.5px; font-weight: bold; margin-bottom: 3px; }
     .brands { margin: 10px auto 0; }
-    .brands td { padding: 0 5px; }
+    .brands td { padding: 0 9px; vertical-align: middle; text-align: center; }
+    .brand-logo { height: 34px; max-width: 95px; }
     .brand { display: inline-block; border: 1.5px solid #c62828; border-radius: 4px; padding: 3px 7px; font-size: 9px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.4px; }
     .to { margin-top: 26px; border-top: 1.5px dashed #c62828; padding-top: 14px; }
     .to-name { font-size: 22px; font-weight: bold; color: #111827; margin: 10px 0 6px 18px; }
@@ -25,7 +26,7 @@
 <body>
     <p class="label">From :</p>
     <div class="from-block">
-        <p class="name">{{ $company['name'] }}</p>
+        <p class="name">{{ $company['legal_name'] }}</p>
         @if($company['delivery_tagline'])<div class="tagline">{{ $company['delivery_tagline'] }}</div>@endif
         @foreach(array_filter(array_map('trim', preg_split('/\r?\n/', (string) $company['address']))) as $addressLine)
             <div class="line">{{ $addressLine }}</div>
@@ -39,7 +40,13 @@
         @if($brands)
             <table class="brands"><tr>
                 @foreach($brands as $brand)
-                    <td><span class="brand">{{ $brand }}</span></td>
+                    <td>
+                        @if($brand['logo'])
+                            <img src="{{ $brand['logo'] }}" class="brand-logo" alt="{{ $brand['name'] }}">
+                        @else
+                            <span class="brand">{{ $brand['name'] }}</span>
+                        @endif
+                    </td>
                 @endforeach
             </tr></table>
         @endif
@@ -54,9 +61,8 @@
         @if($recipient['phone'])<div class="to-phone">Tel: {{ $recipient['phone'] }}</div>@endif
     </div>
 
-    <div class="meta">
-        <strong>Ref:</strong> {{ $invoice->invoice_no }} &nbsp;·&nbsp; {{ $invoice->created_at->format('d/m/Y') }}
-        @if($shipping) &nbsp;·&nbsp; <strong>Via:</strong> {{ $shipping }}@endif
-    </div>
+    @if($shipping)
+        <div class="meta"><strong>Via:</strong> {{ $shipping }}</div>
+    @endif
 </body>
 </html>

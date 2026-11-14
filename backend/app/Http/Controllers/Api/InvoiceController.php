@@ -457,7 +457,7 @@ class InvoiceController extends Controller
         $pdf = Pdf::loadView('invoices.delivery', [
             'invoice' => $invoice,
             'company' => $company,
-            'brands' => array_values(array_filter(array_map('trim', explode(',', (string) $company['delivery_brands'])))),
+            'brands' => $this->brandLogos((string) $company['delivery_brands']),
             'recipient' => [
                 'name' => $name,
                 // Commas or new lines split the address over several lines on the label.
@@ -470,6 +470,29 @@ class InvoiceController extends Controller
         $fileName = preg_replace('~[\\\\/:*?"<>|]+~', '-', $invoice->invoice_no);
 
         return $pdf->download("{$fileName}-delivery-note.pdf");
+    }
+
+    /**
+     * Brands for the delivery note, each with its logo (resources/images/brands/<brand>.png) when
+     * one exists, matched on the brand's first word, e.g. "Mitsubishi Motors" → mitsubishi.png.
+     * Brands without a logo file print as text.
+     */
+    private function brandLogos(string $brands): array
+    {
+        return collect(explode(',', $brands))
+            ->map(fn ($name) => trim($name))
+            ->filter()
+            ->map(function ($name) {
+                $key = strtolower(preg_replace('/[^a-z0-9]/i', '', strtok($name, ' ')));
+                $file = resource_path("images/brands/{$key}.png");
+
+                return [
+                    'name' => $name,
+                    'logo' => is_file($file) ? 'data:image/png;base64,'.base64_encode(file_get_contents($file)) : null,
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     public function pdf(Request $request, Invoice $invoice)
