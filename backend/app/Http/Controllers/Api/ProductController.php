@@ -44,7 +44,7 @@ class ProductController extends Controller
             ->when($request->boolean('low_stock'), fn ($q) => $q->whereRaw(
                 '(select coalesce(sum(quantity), 0) from stock_ledger where stock_ledger.product_id = products.id) <= products.reorder_level'
             ))
-            ->orderBy('name')
+            ->tap(fn ($q) => $this->applySort($q, $request))
             ->paginate(min(max($request->integer('per_page', 100), 1), 1000));
 
         $this->attachStoreStock($products->getCollection());
@@ -153,6 +153,36 @@ class ProductController extends Controller
     }
 
     /**
+     * Column sorting for the inventory list and export (?sort=…&dir=asc|desc); defaults to name.
+     * Codes and numbers sort numerically (2, 10, 4400), names alphabetically; ties fall back to name.
+     */
+    private function applySort($query, Request $request): void
+    {
+        $dir = strtolower((string) $request->input('dir')) === 'desc' ? 'desc' : 'asc';
+        $numeric = fn (string $column) => $query
+            ->orderByRaw("{$column} IS NULL")
+            ->orderByRaw("CAST({$column} AS UNSIGNED) {$dir}")
+            ->orderBy($column, $dir);
+
+        match ($request->input('sort')) {
+            'item_no' => $numeric('products.item_no'),
+            'item_code' => $numeric('products.item_code'),
+            'part_no' => $query->orderByRaw('products.part_no IS NULL')->orderBy('products.part_no', $dir),
+            'brand' => $query->orderBy(Brand::select('name')->whereColumn('brands.id', 'products.brand_id'), $dir),
+            'store' => $query->orderBy(Store::select('code')->whereColumn('stores.id', 'products.store_id'), $dir),
+            'vehicle' => $query->orderBy(VehicleBrand::select('name')->whereColumn('vehicle_brands.id', 'products.vehicle_brand_id'), $dir)
+                ->orderBy(VehicleModel::select('name')->whereColumn('vehicle_models.id', 'products.vehicle_model_id'), $dir),
+            'stock' => $query->orderBy('stock_on_hand', $dir),
+            'cost_price' => $query->orderBy('products.cost_price', $dir),
+            'selling_price' => $query->orderBy('products.selling_price', $dir),
+            'created_at' => $query->orderBy('products.created_at', $dir),
+            default => $query->orderBy('products.name', $request->input('sort') === 'name' ? $dir : 'asc'),
+        };
+
+        $query->orderBy('products.name')->orderBy('products.id');
+    }
+
+    /**
      * Admin only. mode "stock": every stock quantity back to zero (products kept).
      * mode "products": delete every product and its stock. Products already on invoices or
      * purchases cannot be deleted without breaking those bills, so they are archived instead:
@@ -229,7 +259,7 @@ class ProductController extends Controller
             ->when($request->boolean('low_stock'), fn ($q) => $q->whereRaw(
                 '(select coalesce(sum(quantity), 0) from stock_ledger where stock_ledger.product_id = products.id) <= products.reorder_level'
             ))
-            ->orderBy('name')
+            ->tap(fn ($q) => $this->applySort($q, $request))
             ->get();
 
         $filename = 'inventory_export_'.now()->format('Y-m-d_His').'.csv';

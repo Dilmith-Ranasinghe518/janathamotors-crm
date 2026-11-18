@@ -15,6 +15,9 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
 } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
@@ -88,14 +91,19 @@ export function ProductsPage() {
 
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(50)
+  // Click a column header: ascending, click again: descending.
+  const [sort, setSort] = useState({ column: 'name', dir: 'asc' })
+  function toggleSort(column) {
+    setSort((s) => (s.column === column ? { column, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { column, dir: 'asc' }))
+  }
 
   // Any change to the search or filters starts again from the first page.
   useEffect(() => {
     setPage(1)
-  }, [search, selectedStoreId, selectedCategoryId, lowStockOnly, source, perPage])
+  }, [search, selectedStoreId, selectedCategoryId, lowStockOnly, source, perPage, sort])
 
   const productsQuery = useQuery({
-    queryKey: ['products', search, selectedStoreId, selectedCategoryId, lowStockOnly, source, page, perPage],
+    queryKey: ['products', search, selectedStoreId, selectedCategoryId, lowStockOnly, source, sort, page, perPage],
     placeholderData: (prev) => prev,
     queryFn: () =>
       api
@@ -103,6 +111,8 @@ export function ProductsPage() {
           params: {
             page,
             per_page: perPage,
+            sort: sort.column,
+            dir: sort.dir,
             search: search || undefined,
             store_id: selectedStoreId || undefined,
             category_id: selectedCategoryId || undefined,
@@ -223,6 +233,8 @@ export function ProductsPage() {
             category_id: selectedCategoryId || undefined,
             low_stock: lowStockOnly || undefined,
             source: source || undefined,
+            sort: sort.column,
+            dir: sort.dir,
           },
         })
         all.push(...data.data)
@@ -253,6 +265,8 @@ export function ProductsPage() {
           store_id: selectedStoreId || undefined,
           low_stock: lowStockOnly || undefined,
           source: source || undefined,
+          sort: sort.column,
+          dir: sort.dir,
         },
         responseType: 'blob',
       })
@@ -485,17 +499,17 @@ export function ProductsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)] bg-[var(--paper)]/50">
-                <th className="px-4 py-3 whitespace-nowrap">Item No</th>
-                <th className="px-4 py-3 whitespace-nowrap">Item Code</th>
-                <th className="px-4 py-3 whitespace-nowrap">Part No</th>
+                <SortHeader label="Item No" column="item_no" sort={sort} onSort={toggleSort} />
+                <SortHeader label="Item Code" column="item_code" sort={sort} onSort={toggleSort} />
+                <SortHeader label="Part No" column="part_no" sort={sort} onSort={toggleSort} />
                 <th className="px-4 py-3 whitespace-nowrap">QR</th>
-                <th className="px-4 py-3 whitespace-nowrap min-w-[280px]">Name & Brand</th>
-                <th className="px-4 py-3 whitespace-nowrap">Store Location</th>
-                <th className="px-4 py-3 whitespace-nowrap">Vehicle Compatibility</th>
-                <th className="px-4 py-3 text-right whitespace-nowrap">Stock</th>
-                <th className="px-4 py-3 text-right whitespace-nowrap">Cost</th>
-                <th className="px-4 py-3 text-right whitespace-nowrap">Price</th>
-                <th className="px-4 py-3 whitespace-nowrap">Added</th>
+                <SortHeader label="Name & Brand" column="name" sort={sort} onSort={toggleSort} className="min-w-[280px]" />
+                <SortHeader label="Store Location" column="store" sort={sort} onSort={toggleSort} />
+                <SortHeader label="Vehicle Compatibility" column="vehicle" sort={sort} onSort={toggleSort} />
+                <SortHeader label="Stock" column="stock" sort={sort} onSort={toggleSort} align="right" />
+                <SortHeader label="Cost" column="cost_price" sort={sort} onSort={toggleSort} align="right" />
+                <SortHeader label="Price" column="selling_price" sort={sort} onSort={toggleSort} align="right" />
+                <SortHeader label="Added" column="created_at" sort={sort} onSort={toggleSort} />
                 <th className="px-4 py-3 whitespace-nowrap text-right">Actions</th>
               </tr>
             </thead>
@@ -991,5 +1005,27 @@ function Pagination({ meta, page, onPage, perPage, onPerPage }) {
         </div>
       )}
     </div>
+  )
+}
+
+/** Clickable column header: ▲ ascending / ▼ descending on the active column. */
+function SortHeader({ label, column, sort, onSort, align = 'left', className = '' }) {
+  const active = sort.column === column
+  const Icon = !active ? ChevronsUpDown : sort.dir === 'asc' ? ChevronUp : ChevronDown
+  return (
+    <th className={`px-4 py-3 whitespace-nowrap ${align === 'right' ? 'text-right' : ''} ${className}`}>
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        title={`Sort by ${label}`}
+        aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+        className={`inline-flex items-center gap-1 uppercase tracking-wide transition hover:text-[var(--ink)] ${
+          align === 'right' ? 'flex-row-reverse' : ''
+        } ${active ? 'text-[var(--accent)]' : ''}`}
+      >
+        <span>{label}</span>
+        <Icon className={`h-3.5 w-3.5 ${active ? '' : 'opacity-40'}`} />
+      </button>
+    </th>
   )
 }
