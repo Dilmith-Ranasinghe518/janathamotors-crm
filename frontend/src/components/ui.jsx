@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import clsx from 'clsx'
+import { createPortal } from 'react-dom'
 import { Eye, EyeOff } from 'lucide-react'
 
 export function Card({ className, children }) {
@@ -124,7 +125,8 @@ export function EmptyState({ message }) {
 }
 
 export function Modal({ title, onClose, children, wide = false }) {
-  return (
+  // Rendered at the page root so a parent with a blur/transform (like the sticky header) can't trap or clip it.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 pt-6 sm:p-4 sm:pt-12 backdrop-blur-xs">
       <div
         className={clsx(
@@ -144,6 +146,7 @@ export function Modal({ title, onClose, children, wide = false }) {
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
