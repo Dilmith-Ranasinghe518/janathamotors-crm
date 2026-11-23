@@ -226,7 +226,6 @@
                     <td>{{ $line['item']->product->item_code ?: $line['item']->product->item_no }}</td>
                     <td>
                         {{ $line['item']->product->name }}
-                        @if($line['item']->product->part_no)<span style="color: #6b7280;"> [{{ $line['item']->product->part_no }}]</span>@endif
                     </td>
                     <td style="text-align: center;">{{ $line['item']->quantity }}</td>
                     @if($isVat)
