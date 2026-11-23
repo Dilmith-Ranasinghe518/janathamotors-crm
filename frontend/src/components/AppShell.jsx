@@ -32,6 +32,7 @@ import { useTheme } from '../context/ThemeContext'
 import { api } from '../lib/api'
 import logo from '../assets/logo.webp'
 import { SoftwareCredit } from './SoftwareCredit'
+import { NetworkBanners, NetworkStatusPill } from './NetworkStatus'
 
 const NAV = [
   { to: '/', label: 'Dashboard', permission: 'view_dashboard', icon: LayoutDashboard, end: true },
@@ -337,11 +338,15 @@ export function AppShell() {
           </div>
 
           <div className="flex items-center gap-3">
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <NetworkStatusPill />
+              <ThemeToggle />
+            </div>
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <NetworkBanners />
           {localStorage.getItem('jms_weak_password') === '1' && location.pathname !== '/settings' && (
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--critical)] bg-[var(--critical-soft)] px-4 py-3 text-sm font-semibold text-[var(--critical)]">
               <span>You signed in with a well-known default password. Change it now to keep the system safe.</span>

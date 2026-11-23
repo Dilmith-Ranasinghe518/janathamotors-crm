@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { api } from '../lib/api'
+import { clearCachedData } from '../lib/offline'
 
 const AuthContext = createContext(null)
 
@@ -22,10 +23,13 @@ export function AuthProvider({ children }) {
         setUser(data)
         localStorage.setItem('jms_user', JSON.stringify(data))
       })
-      .catch(() => {
-        localStorage.removeItem('jms_token')
-        localStorage.removeItem('jms_user')
-        setUser(null)
+      .catch((error) => {
+        // Only a rejected login signs out; no network (offline) keeps the saved session.
+        if (error?.response?.status === 401) {
+          localStorage.removeItem('jms_token')
+          localStorage.removeItem('jms_user')
+          setUser(null)
+        }
       })
       .finally(() => setLoading(false))
   }, [])
@@ -48,6 +52,8 @@ export function AuthProvider({ children }) {
     }
     localStorage.removeItem('jms_token')
     localStorage.removeItem('jms_user')
+    // Offline copies of business data are removed on sign-out (unsynced bills are kept to upload later).
+    clearCachedData()
     setUser(null)
   }
 

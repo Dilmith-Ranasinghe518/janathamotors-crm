@@ -386,7 +386,8 @@ export function InvoiceCreatePage() {
 
   const saveMutation = useMutation({
     mutationFn: (payload) => (isEdit ? api.put(`/invoices/${id}`, payload) : api.post('/invoices', payload)),
-    onSuccess: ({ data }) => navigate(`/invoices/${data.id}`),
+    // Offline: the bill is saved on this device and uploaded when back online.
+    onSuccess: ({ data }) => (data?.offline ? navigate('/invoices', { state: { savedOffline: true } }) : navigate(`/invoices/${data.id}`)),
     onError: (err) => setError(apiErrorMessage(err, `Could not ${isEdit ? 'update' : 'create'} the invoice.`)),
   })
 

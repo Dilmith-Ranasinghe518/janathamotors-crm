@@ -51,6 +51,8 @@ class InvoiceController extends Controller
             // Credit bills must be raised against a registered customer.
             'customer_id' => ['nullable', 'required_if_accepted:is_credit', 'exists:customers,id'],
             'store_id' => ['nullable', 'exists:stores,id'],
+            // Bills saved while offline: when the sale happened (kept as the bill date).
+            'sold_at' => ['nullable', 'date', 'before:+1 day', 'after:-30 days'],  // allows a till clock a little fast
             'customer_name' => ['nullable', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
             'vehicle_no' => ['nullable', 'string', 'max:100'],
@@ -76,12 +78,20 @@ class InvoiceController extends Controller
             'customer_id.required_if_accepted' => 'Please select a customer for this credit bill.',
         ]);
 
-        $invoice = DB::transaction(function () use (&$data, $request) {
+        // The same bill sent again (a retry, or an offline bill re-uploaded) returns the first copy.
+        $clientRef = $this->clientRef($request);
+        if ($clientRef && ($existing = Invoice::where('client_ref', $clientRef)->first())) {
+            return response()->json($existing->load('items.product', 'customer'), 200);
+        }
+        $offlineSale = $request->header('X-Offline-Sale') === '1';
+
+        $invoice = DB::transaction(function () use (&$data, $request, $clientRef, $offlineSale) {
             $newItemStock = $this->createProductsFromLines($data['items'], $data['store_id'] ?? null, $request);
 
             foreach ($data['items'] as $item) {
                 $product = Product::findOrFail($item['product_id']);
-                if ($product->stock_on_hand < $item['quantity']) {
+                // An offline sale has already happened at the counter: record it even if stock went short.
+                if (! $offlineSale && $product->stock_on_hand < $item['quantity']) {
                     throw ValidationException::withMessages([
                         'items' => ["Not enough stock for {$product->name} (available: {$product->stock_on_hand})."],
                     ]);
@@ -147,6 +157,8 @@ class InvoiceController extends Controller
                 'due_amount' => $dueAmount,
                 'status' => $dueAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'due'),
                 'is_credit' => $data['is_credit'] ?? false,
+                'created_offline' => $offlineSale,
+                'client_ref' => $clientRef,
                 'created_by' => $request->user()->id,
             ] + $this->taxInvoiceFields($data, (float) Setting::get('tax_rate', 0), $total));
 
@@ -191,6 +203,13 @@ class InvoiceController extends Controller
 
             if ($invoice->customer_id) {
                 $invoice->customer()->increment('current_due', $dueAmount);
+            }
+
+            // Offline bills keep the time of the sale, not the time they were uploaded.
+            if ($offlineSale && ! empty($data['sold_at'])) {
+                $soldAt = \Illuminate\Support\Carbon::parse($data['sold_at']);
+                $invoice->forceFill(['created_at' => $soldAt])->saveQuietly();
+                $invoice->payments()->update(['paid_at' => $soldAt]);
             }
 
             return $invoice;
@@ -688,6 +707,14 @@ class InvoiceController extends Controller
                 'discount' => ["This bill gives a {$percent}% discount; your limit is {$limit}%. Ask a manager to approve it."],
             ]);
         }
+    }
+
+    /** The app's own reference for a bill (X-Client-Ref header), used to avoid duplicates. */
+    private function clientRef(Request $request): ?string
+    {
+        $ref = trim((string) $request->header('X-Client-Ref'));
+
+        return preg_match('/^[A-Za-z0-9-]{8,64}$/', $ref) ? $ref : null;
     }
 
     /**

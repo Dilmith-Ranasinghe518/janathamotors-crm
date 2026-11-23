@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, Eye, FileDown, Pencil, Trash2, Truck, Plus, CreditCard, Search, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Card, EmptyState, Input, PageHeader, Select, StatusBadge } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
+import { useNetwork } from '../context/NetworkContext'
 
 /** A delivery note needs the customer's name plus an address or phone number. */
 function hasDeliveryDetails(inv) {
@@ -16,6 +17,8 @@ const emptyFilters = { status: '', type: '', store_id: '', from: '', to: '' }
 
 export function InvoicesPage() {
   const { can, user } = useAuth()
+  const { queue } = useNetwork()
+  const location = useLocation()
   const isAdmin = Boolean(user?.roles?.includes('Admin'))
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
@@ -140,6 +143,35 @@ export function InvoicesPage() {
           )
         }
       />
+
+      {location.state?.savedOffline && (
+        <div className="mb-4 rounded-xl border border-[var(--warning)] bg-[var(--warning-soft)] px-4 py-3 text-sm font-semibold text-[var(--warning)]">
+          Bill saved on this device (offline). It gets its invoice number and appears in this list once you switch back to online mode.
+        </div>
+      )}
+      {queue.length > 0 && (
+        <Card className="mb-4 p-4">
+          <p className="mb-2 text-sm font-bold text-[var(--ink)]">
+            Unsynced bills on this device ({queue.length})
+            <span className="ml-2 text-xs font-normal text-[var(--muted)]">Uploaded automatically when you switch to online mode</span>
+          </p>
+          <ul className="divide-y divide-[var(--line)] text-xs">
+            {queue.map((bill) => (
+              <li key={bill.clientRef} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <span className="font-semibold text-[var(--ink)]">
+                  {bill.payload.is_credit ? 'Credit bill' : 'Sales invoice'} · {bill.payload.customer_name || 'Walk-in'}
+                </span>
+                <span className="text-[var(--muted)]">{new Date(bill.savedAt).toLocaleString('en-GB', { timeZone: 'Asia/Colombo' })}</span>
+                {bill.error ? (
+                  <span className="font-semibold text-[var(--critical)]">Upload failed: {bill.error}</span>
+                ) : (
+                  <span className="rounded-full bg-[var(--warning-soft)] px-2 py-0.5 font-bold text-[var(--warning)]">Waiting to upload</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <div className="relative w-full sm:w-80">

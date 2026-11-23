@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'vehicle_no', 'vehicle_model', 'vehicle_year',
     'delivery_date', 'place_of_supply', 'payment_mode', 'additional_info', 'vat_rate', 'vat_amount',
     'subtotal', 'discount', 'tax', 'total',
-    'paid_amount', 'due_amount', 'status', 'is_credit', 'created_by',
+    'paid_amount', 'due_amount', 'status', 'is_credit', 'created_offline', 'client_ref', 'created_by',
 ])]
 class Invoice extends Model
 {
@@ -20,6 +20,7 @@ class Invoice extends Model
     {
         return [
             'is_credit' => 'boolean',
+            'created_offline' => 'boolean',
             'delivery_date' => 'date:Y-m-d',
             'vat_rate' => 'decimal:2',
             'vat_amount' => 'decimal:2',
