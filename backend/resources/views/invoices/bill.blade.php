@@ -290,6 +290,6 @@
         </tr>
     </table>
 
-    <div class="credit">Software by Calcify Int &nbsp;·&nbsp; +94 70 160 0215</div>
+    <div class="credit">Software by Calcify Int &nbsp;·&nbsp; +94 71 717 0333 &nbsp;·&nbsp; www.calcifyint.com</div>
 </body>
 </html>
