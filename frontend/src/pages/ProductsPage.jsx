@@ -499,7 +499,6 @@ export function ProductsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)] bg-[var(--paper)]/50">
-                <SortHeader label="Item No" column="item_no" sort={sort} onSort={toggleSort} className="hidden sm:table-cell" />
                 <SortHeader label="Item Code" column="item_code" sort={sort} onSort={toggleSort} />
                 <SortHeader label="Part No" column="part_no" sort={sort} onSort={toggleSort} />
                 <th className="hidden px-4 py-3 whitespace-nowrap sm:table-cell">QR</th>
@@ -516,7 +515,6 @@ export function ProductsPage() {
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)]/40 transition">
-                  <td className="hidden px-4 py-3.5 font-mono text-xs whitespace-nowrap text-[var(--muted)] sm:table-cell">{p.item_no}</td>
                   <td className="px-4 py-3.5 font-mono text-xs font-semibold whitespace-nowrap text-[var(--ink)]">{p.item_code || '—'}</td>
                   <td className="px-4 py-3.5 font-mono text-xs text-[var(--ink)] min-w-[140px] max-w-[190px] break-words">
                     {/* long multi-part numbers wrap at the slashes instead of squeezing the name column */}
