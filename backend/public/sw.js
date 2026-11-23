@@ -5,12 +5,12 @@
  *  - Icons / logos: served from cache, refreshed in the background.
  * API calls (/api/…) are never cached here; the app keeps its own offline copies of data.
  */
-const VERSION = 'jms-v1'
+const VERSION = 'jms-v2'
 const SHELL = `${VERSION}-shell`
 const ASSETS = `${VERSION}-assets`
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(SHELL).then((cache) => cache.add('/')).then(() => self.skipWaiting()))
+  event.waitUntil(caches.open(SHELL).then((cache) => cache.addAll(['/', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png', '/logo.webp'])).then(() => self.skipWaiting()))
 })
 
 self.addEventListener('activate', (event) => {

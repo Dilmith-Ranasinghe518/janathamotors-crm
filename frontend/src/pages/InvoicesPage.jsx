@@ -199,7 +199,7 @@ export function InvoicesPage() {
             <option value="credit">Credit bills</option>
           </Select>
         </div>
-        <div className="w-44">
+        <div className="min-w-[9rem] flex-1 sm:w-44 sm:flex-none">
           <Select value={filters.store_id} onChange={(e) => setFilter('store_id', e.target.value)}>
             <option value="">All stores</option>
             {stores.map((s) => (

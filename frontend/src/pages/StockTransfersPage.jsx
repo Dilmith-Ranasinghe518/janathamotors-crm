@@ -187,7 +187,7 @@ export function StockTransfersPage() {
       {/* Filters Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1 max-w-xs">
+          <div className="relative w-full sm:flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--muted)]" />
             <input
               type="text"

@@ -127,10 +127,11 @@ export function EmptyState({ message }) {
 export function Modal({ title, onClose, children, wide = false }) {
   // Rendered at the page root so a parent with a blur/transform (like the sticky header) can't trap or clip it.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 pt-6 sm:p-4 sm:pt-12 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/50 backdrop-blur-xs sm:items-start sm:p-4 sm:pt-12">
       <div
         className={clsx(
-          'w-full max-h-[90vh] overflow-y-auto rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 sm:p-6 shadow-2xl transition-all',
+          // Phones: a bottom sheet the width of the screen. Larger screens: a centred dialog.
+          'w-full max-h-[92dvh] overflow-y-auto rounded-t-2xl border border-[var(--line)] bg-[var(--surface)] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl transition-all sm:max-h-[90vh] sm:rounded-2xl sm:p-6',
           wide ? 'max-w-3xl' : 'max-w-md'
         )}
       >

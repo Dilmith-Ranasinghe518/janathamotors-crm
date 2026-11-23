@@ -185,7 +185,7 @@ export function ShipmentsPage() {
       />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <div className="relative w-64 sm:w-80">
+        <div className="relative w-full sm:w-80">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
           <input
             placeholder="Search shipment, tracking no, carrier…"
@@ -194,7 +194,7 @@ export function ShipmentsPage() {
             className="w-full rounded-lg border border-[var(--line)] bg-[var(--surface)] py-2 pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
           />
         </div>
-        <div className="w-48 sm:w-60">
+        <div className="min-w-[9rem] flex-1 sm:w-60 sm:flex-none">
           <Select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)}>
             <option value="">All Suppliers</option>
             {suppliers.map((s) => (
@@ -259,11 +259,11 @@ export function ShipmentsPage() {
 
       {formOpen && (
         <Modal title={editing ? `Shipment ${editing.shipment_no}` : 'New shipment'} onClose={closeForm} wide>
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {error && (
-              <div className="col-span-2 rounded-lg bg-[var(--critical-soft)] p-3 text-xs font-semibold text-[var(--critical)]">{error}</div>
+              <div className="sm:col-span-2 rounded-lg bg-[var(--critical-soft)] p-3 text-xs font-semibold text-[var(--critical)]">{error}</div>
             )}
-            <Input label="Shipment description *" required placeholder="e.g. Brake pads & filters — March order" className="col-span-2" {...field('title')} />
+            <Input label="Shipment description *" required placeholder="e.g. Brake pads & filters — March order" className="sm:col-span-2" {...field('title')} />
 
             <Select label="Supplier" {...field('supplier_id')}>
               <option value="">— Select Supplier —</option>
@@ -296,7 +296,7 @@ export function ShipmentsPage() {
             <Input label="Packages / Cartons" type="number" min="0" {...field('packages')} />
             <Input label="Freight cost (LKR)" type="number" step="0.01" min="0" {...field('freight_cost')} />
 
-            <label className="col-span-2 flex flex-col gap-1 text-sm">
+            <label className="sm:col-span-2 flex flex-col gap-1 text-sm">
               <span className="font-medium text-[var(--ink)]">Notes</span>
               <textarea
                 rows={3}
@@ -307,12 +307,12 @@ export function ShipmentsPage() {
             </label>
 
             {editing && (
-              <p className="col-span-2 text-xs text-[var(--muted)]">
+              <p className="sm:col-span-2 text-xs text-[var(--muted)]">
                 Added {formatDate(editing.created_at)}{editing.creator ? ` by ${editing.creator.name}` : ''}
               </p>
             )}
 
-            <div className="col-span-2 flex items-center justify-between gap-2 border-t border-[var(--line)] pt-3">
+            <div className="sm:col-span-2 flex items-center justify-between gap-2 border-t border-[var(--line)] pt-3">
               <div>
                 {editing && (
                   <Button

@@ -443,7 +443,7 @@ export function ProductsPage() {
       )}
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <div className="w-64 sm:w-80">
+        <div className="w-full sm:w-80">
           <Input
             placeholder="Search by name, item no, part no, item code, brand, or vehicle…"
             value={search}
@@ -451,7 +451,7 @@ export function ProductsPage() {
           />
         </div>
 
-        <div className="w-48 sm:w-60">
+        <div className="min-w-[9rem] flex-1 sm:w-60 sm:flex-none">
           <Select
             value={selectedStoreId}
             onChange={(e) => setSelectedStoreId(e.target.value)}
@@ -465,7 +465,7 @@ export function ProductsPage() {
           </Select>
         </div>
 
-        <div className="w-48 sm:w-60">
+        <div className="min-w-[9rem] flex-1 sm:w-60 sm:flex-none">
           <Select
             value={selectedCategoryId}
             onChange={(e) => setSelectedCategoryId(e.target.value)}
@@ -499,11 +499,11 @@ export function ProductsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)] bg-[var(--paper)]/50">
-                <SortHeader label="Item No" column="item_no" sort={sort} onSort={toggleSort} />
+                <SortHeader label="Item No" column="item_no" sort={sort} onSort={toggleSort} className="hidden sm:table-cell" />
                 <SortHeader label="Item Code" column="item_code" sort={sort} onSort={toggleSort} />
                 <SortHeader label="Part No" column="part_no" sort={sort} onSort={toggleSort} />
-                <th className="px-4 py-3 whitespace-nowrap">QR</th>
-                <SortHeader label="Name & Brand" column="name" sort={sort} onSort={toggleSort} className="min-w-[280px]" />
+                <th className="hidden px-4 py-3 whitespace-nowrap sm:table-cell">QR</th>
+                <SortHeader label="Name & Brand" column="name" sort={sort} onSort={toggleSort} className="min-w-[220px] sm:min-w-[280px]" />
                 <SortHeader label="Store Location" column="store" sort={sort} onSort={toggleSort} />
                 <SortHeader label="Vehicle Compatibility" column="vehicle" sort={sort} onSort={toggleSort} />
                 <SortHeader label="Stock" column="stock" sort={sort} onSort={toggleSort} align="right" />
@@ -516,16 +516,16 @@ export function ProductsPage() {
             <tbody>
               {products.map((p) => (
                 <tr key={p.id} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)]/40 transition">
-                  <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap text-[var(--muted)]">{p.item_no}</td>
+                  <td className="hidden px-4 py-3.5 font-mono text-xs whitespace-nowrap text-[var(--muted)] sm:table-cell">{p.item_no}</td>
                   <td className="px-4 py-3.5 font-mono text-xs font-semibold whitespace-nowrap text-[var(--ink)]">{p.item_code || '—'}</td>
                   <td className="px-4 py-3.5 font-mono text-xs text-[var(--ink)] min-w-[140px] max-w-[190px] break-words">
                     {/* long multi-part numbers wrap at the slashes instead of squeezing the name column */}
                     {p.part_no ? p.part_no.split('/').join('/\u200b') : <span className="text-[var(--muted)]">—</span>}
                   </td>
-                  <td className="px-4 py-3.5">
+                  <td className="hidden px-4 py-3.5 sm:table-cell">
                     <ProductQrThumb product={p} onClick={() => setQrProduct(p)} />
                   </td>
-                  <td className="px-4 py-3.5 min-w-[280px]">
+                  <td className="px-4 py-3.5 min-w-[220px] sm:min-w-[280px]">
                     <div className="text-[13px] font-semibold text-[var(--ink)] leading-snug">
                       {p.name}
                       {p.stock_on_hand <= p.reorder_level && (
@@ -623,7 +623,7 @@ export function ProductsPage() {
 
       {formOpen && (
         <Modal title={editing ? 'Edit product' : 'New product'} onClose={closeForm} wide>
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Item Code" placeholder={editing ? '' : 'Leave blank to auto-assign (4400…)'} value={form.item_code} onChange={(e) => setForm({ ...form, item_code: e.target.value })} />
             <Input label="Item Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Input label="Part No" placeholder="Manufacturer / OEM part number" value={form.part_no} onChange={(e) => setForm({ ...form, part_no: e.target.value })} />
@@ -730,7 +730,7 @@ export function ProductsPage() {
             <Input
               label="Compatible Models / Notes"
               placeholder="e.g. 2018-2023, KSP130, NZE141"
-              className="col-span-2"
+              className="sm:col-span-2"
               value={form.compatible_models}
               onChange={(e) => setForm({ ...form, compatible_models: e.target.value })}
             />

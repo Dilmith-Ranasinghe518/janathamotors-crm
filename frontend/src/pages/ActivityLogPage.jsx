@@ -108,7 +108,7 @@ export function ActivityLogPage() {
             className="w-full rounded-lg border border-[var(--line)] bg-[var(--surface)] py-2 pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
           />
         </div>
-        <div className="w-44">
+        <div className="min-w-[9rem] flex-1 sm:w-44 sm:flex-none">
           <Select value={filters.user_id} onChange={(e) => setFilter('user_id', e.target.value)}>
             <option value="">All users</option>
             {users.map((u) => (

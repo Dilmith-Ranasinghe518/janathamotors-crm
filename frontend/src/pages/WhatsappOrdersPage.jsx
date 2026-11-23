@@ -193,7 +193,7 @@ export function WhatsappOrdersPage() {
       />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <div className="relative w-64 sm:w-80">
+        <div className="relative w-full sm:w-80">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" />
           <input
             placeholder="Search order, invoice, customer, tracking…"
@@ -202,7 +202,7 @@ export function WhatsappOrdersPage() {
             className="w-full rounded-lg border border-[var(--line)] bg-[var(--surface)] py-2 pl-9 pr-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)]"
           />
         </div>
-        <div className="w-44">
+        <div className="min-w-[9rem] flex-1 sm:w-44 sm:flex-none">
           <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="">All Statuses</option>
             {STATUSES.map((s) => (
@@ -210,7 +210,7 @@ export function WhatsappOrdersPage() {
             ))}
           </Select>
         </div>
-        <div className="w-44">
+        <div className="min-w-[9rem] flex-1 sm:w-44 sm:flex-none">
           <Select value={partnerFilter} onChange={(e) => setPartnerFilter(e.target.value)}>
             <option value="">All Partners</option>
             {PARTNERS.map((p) => (
@@ -330,22 +330,22 @@ export function WhatsappOrdersPage() {
 
       {formOpen && (
         <Modal title={editing ? `Edit order ${editing.order_no}` : 'New WhatsApp order'} onClose={closeForm} wide>
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {error && (
-              <div className="col-span-2 rounded-lg bg-[var(--critical-soft)] p-3 text-xs font-semibold text-[var(--critical)]">{error}</div>
+              <div className="sm:col-span-2 rounded-lg bg-[var(--critical-soft)] p-3 text-xs font-semibold text-[var(--critical)]">{error}</div>
             )}
 
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <InvoicePicker selected={selectedInvoice} onSelect={handleSelectInvoice} />
             </div>
 
             <Input label="Order number" value={editing ? editing.order_no : 'Auto-generated on save'} disabled className="opacity-70" />
             <Input label="Order date *" type="date" required {...field('order_date')} />
 
-            <div className="col-span-2 border-t border-[var(--line)] pt-3 text-sm font-bold text-[var(--ink)]">Customer details</div>
+            <div className="sm:col-span-2 border-t border-[var(--line)] pt-3 text-sm font-bold text-[var(--ink)]">Customer details</div>
             <Input label="Customer name *" required {...field('customer_name')} />
             <Input label="Customer mobile (WhatsApp)" placeholder="07X XXX XXXX" {...field('customer_phone')} />
-            <label className="col-span-2 flex flex-col gap-1 text-sm">
+            <label className="sm:col-span-2 flex flex-col gap-1 text-sm">
               <span className="font-medium text-[var(--ink)]">Shipping address</span>
               <textarea
                 rows={2}
@@ -354,7 +354,7 @@ export function WhatsappOrdersPage() {
               />
             </label>
 
-            <div className="col-span-2 border-t border-[var(--line)] pt-3 text-sm font-bold text-[var(--ink)]">Delivery</div>
+            <div className="sm:col-span-2 border-t border-[var(--line)] pt-3 text-sm font-bold text-[var(--ink)]">Delivery</div>
             <Select label="Shipping partner *" required {...field('shipping_partner')}>
               <option value="">— Select Partner —</option>
               {PARTNERS.map((p) => (
@@ -387,10 +387,10 @@ export function WhatsappOrdersPage() {
                 <Input label="Driver / conductor mobile" placeholder="07X XXX XXXX" {...field('driver_mobile')} />
               </>
             ) : (
-              form.shipping_partner && <Input label="Tracking number" className="col-span-2" {...field('tracking_no')} />
+              form.shipping_partner && <Input label="Tracking number" className="sm:col-span-2" {...field('tracking_no')} />
             )}
 
-            <label className="col-span-2 flex flex-col gap-1 text-sm">
+            <label className="sm:col-span-2 flex flex-col gap-1 text-sm">
               <span className="font-medium text-[var(--ink)]">Notes</span>
               <textarea
                 rows={2}
@@ -399,7 +399,7 @@ export function WhatsappOrdersPage() {
               />
             </label>
 
-            <div className="col-span-2 flex justify-end gap-2 border-t border-[var(--line)] pt-3">
+            <div className="sm:col-span-2 flex justify-end gap-2 border-t border-[var(--line)] pt-3">
               <Button type="button" variant="secondary" onClick={closeForm}>Cancel</Button>
               <Button type="submit" disabled={saveMutation.isPending}>
                 {saveMutation.isPending ? 'Saving…' : 'Save order'}

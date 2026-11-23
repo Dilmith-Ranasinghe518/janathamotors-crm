@@ -68,7 +68,7 @@ export function CustomersPage() {
         actions={can('manage_customers') && <Button onClick={openCreate}>+ New customer</Button>}
       />
 
-      <Input placeholder="Search by name or phone…" value={search} onChange={(e) => setSearch(e.target.value)} className="mb-4 max-w-xs" />
+      <Input placeholder="Search by name or phone…" value={search} onChange={(e) => setSearch(e.target.value)} className="mb-4 w-full sm:max-w-xs" />
 
       <Card className="overflow-x-auto">
         {customersQuery.isLoading ? (
@@ -131,14 +131,14 @@ export function CustomersPage() {
               setError('')
               saveMutation.mutate(form)
             }}
-            className="grid grid-cols-2 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
           >
             <Input label="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Input label="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             <Input label="Vehicle no." value={form.vehicle_no} onChange={(e) => setForm({ ...form, vehicle_no: e.target.value })} />
-            <Input label="TIN / VAT no." className="col-span-2" value={form.tin} onChange={(e) => setForm({ ...form, tin: e.target.value })} />
-            <Input label="Address" className="col-span-2" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            <Input label="TIN / VAT no." className="sm:col-span-2" value={form.tin} onChange={(e) => setForm({ ...form, tin: e.target.value })} />
+            <Input label="Address" className="sm:col-span-2" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
             {!editing && (
               <Input
                 label="Opening balance"
@@ -148,8 +148,8 @@ export function CustomersPage() {
                 onChange={(e) => setForm({ ...form, opening_balance: e.target.value })}
               />
             )}
-            {error && <p className="col-span-2 text-sm text-[var(--critical)]">{error}</p>}
-            <div className="col-span-2 flex justify-end gap-2 pt-2">
+            {error && <p className="sm:col-span-2 text-sm text-[var(--critical)]">{error}</p>}
+            <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
               <Button type="button" variant="secondary" onClick={() => setFormOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={saveMutation.isPending}>{saveMutation.isPending ? 'Saving…' : 'Save customer'}</Button>
             </div>

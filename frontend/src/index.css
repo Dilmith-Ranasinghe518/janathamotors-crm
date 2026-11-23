@@ -62,3 +62,47 @@ body {
   background: var(--line);
   border-radius: 999px;
 }
+
+/* ---------- Phones & installed app ---------- */
+
+/* Installed app: keep the header and content clear of the notch / home bar. */
+@media (display-mode: standalone) {
+  header.sticky {
+    padding-top: calc(0.875rem + env(safe-area-inset-top));
+  }
+  main {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 639px) {
+  /* 16px text in fields stops iPhones zooming in when a field is tapped. */
+  input:not([type='checkbox']):not([type='radio']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Tables scroll sideways on phones: keep headings on one line and stop columns squashing. */
+  main table th {
+    white-space: nowrap;
+  }
+  main table td {
+    min-width: 6rem;
+  }
+  main table td:first-child,
+  main table th:first-child {
+    min-width: 0;
+  }
+
+  /* Smooth sideways scrolling for tables and the shipments board. */
+  main .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+}

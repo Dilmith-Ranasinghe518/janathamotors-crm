@@ -32,6 +32,7 @@ import { useTheme } from '../context/ThemeContext'
 import { api } from '../lib/api'
 import logo from '../assets/logo.webp'
 import { SoftwareCredit } from './SoftwareCredit'
+import { InstallAppButton } from './InstallApp'
 import { NetworkBanners, NetworkStatusPill } from './NetworkStatus'
 
 const NAV = [
@@ -339,6 +340,7 @@ export function AppShell() {
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
+              <InstallAppButton />
               <NetworkStatusPill />
               <ThemeToggle />
             </div>
