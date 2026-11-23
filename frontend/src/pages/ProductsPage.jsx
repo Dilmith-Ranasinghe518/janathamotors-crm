@@ -92,7 +92,7 @@ export function ProductsPage() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(50)
   // Click a column header: ascending, click again: descending.
-  const [sort, setSort] = useState({ column: 'name', dir: 'asc' })
+  const [sort, setSort] = useState({ column: 'item_code', dir: 'asc' })
   function toggleSort(column) {
     setSort((s) => (s.column === column ? { column, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { column, dir: 'asc' }))
   }
