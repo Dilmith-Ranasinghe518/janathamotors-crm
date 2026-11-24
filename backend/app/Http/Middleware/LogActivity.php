@@ -63,7 +63,8 @@ class LogActivity
             return true; // success and failure
         }
         if ($response->getStatusCode() >= 400) {
-            return false;
+            // Refused changes (no permission, invalid data, conflicts) are kept too; failed page loads are not.
+            return ! $request->isMethod('GET') && ! in_array($response->getStatusCode(), [401, 404, 405, 429], true);
         }
         if ($request->isMethod('GET')) {
             return (bool) preg_match('~/(pdf|delivery-note|export|template)$~', $path);
@@ -92,6 +93,8 @@ class LogActivity
             'changes' => array_filter([
                 'input' => $this->input($request) ?: null,
                 'details' => $extra['changes'] ?? null,
+                'error' => $status >= 400 ? $this->errorMessage($response) : null,
+                ...app(\App\Support\ActivityRecorder::class)->pull(),
             ]) ?: null,
             'method' => $request->method(),
             'path' => '/'.$request->path(),
@@ -133,7 +136,20 @@ class LogActivity
             'POST' => 'create', 'PUT', 'PATCH' => 'update', 'DELETE' => 'delete', default => 'view',
         }));
 
-        return [$action, trim("{$verb} {$resource}".($subject ? " {$subject}" : '')), $model];
+        $description = trim("{$verb} {$resource}".($subject ? " {$subject}" : ''));
+        $status = $response->getStatusCode();
+        if ($status >= 400) {
+            $why = match (true) {
+                $status === 403 => 'no permission',
+                $status === 422 => 'invalid data',
+                $status === 409 => 'conflict',
+                default => 'error '.$status,
+            };
+            $description = 'Refused: '.lcfirst($description).' ('.$why.')';
+            $action .= '_refused';
+        }
+
+        return [$action, $description, $model];
     }
 
     /** A recognisable name for a record: its number, code or name. */
@@ -152,6 +168,18 @@ class LogActivity
         }
 
         return isset($record['id']) ? '#'.$record['id'] : null;
+    }
+
+    /** The reason a refused request gave (validation messages or error text). */
+    private function errorMessage(Response $response): ?string
+    {
+        $body = $this->responseBody($response);
+        if (! $body) {
+            return null;
+        }
+        $text = ! empty($body['errors']) ? collect($body['errors'])->flatten()->join(' ') : ($body['message'] ?? null);
+
+        return $text ? Str::limit((string) $text, 500) : null;
     }
 
     private function responseBody(Response $response): ?array

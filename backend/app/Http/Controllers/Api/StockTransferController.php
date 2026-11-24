@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 
 class StockTransferController extends Controller
 {
+    use \App\Support\PrintsCompanyHeader;
+
     public function index(Request $request)
     {
         $query = StockTransfer::query()
@@ -33,6 +35,7 @@ class StockTransferController extends Controller
             $search = $request->string('search')->trim();
             $query->where(function ($q) use ($search) {
                 $q->where('transfer_no', 'like', '%'.$search.'%')
+                  ->orWhere('po_no', 'like', '%'.$search.'%')
                   ->orWhereHas('fromStore', fn ($sq) => $sq->where('name', 'like', '%'.$search.'%')->orWhere('code', 'like', '%'.$search.'%'))
                   ->orWhereHas('toStore', fn ($sq) => $sq->where('name', 'like', '%'.$search.'%')->orWhere('code', 'like', '%'.$search.'%'));
             });
@@ -59,6 +62,7 @@ class StockTransferController extends Controller
 
             $transfer = StockTransfer::create([
                 'transfer_no' => $transferNo,
+                'po_no' => StockTransfer::nextPoNumber(\Illuminate\Support\Carbon::parse($data['transferred_at'])),
                 'from_store_id' => $data['from_store_id'],
                 'to_store_id' => $data['to_store_id'],
                 'transferred_at' => $data['transferred_at'],
@@ -123,5 +127,25 @@ class StockTransferController extends Controller
                 'items.product:id,item_no,part_no,item_code,name,unit,cost_price,selling_price',
             ])
         );
+    }
+
+    /** Printable PO for a transfer: what leaves one store for the other, with signature lines. */
+    public function po(StockTransfer $stockTransfer)
+    {
+        $stockTransfer->load([
+            'fromStore', 'toStore', 'creator:id,name',
+            'items.product:id,item_no,part_no,item_code,name,unit,shelf_location',
+        ]);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('transfers.po', [
+            'transfer' => $stockTransfer,
+            'company' => $this->companyDetails(),
+            'icons' => $this->billIcons(),
+            'logoDataUri' => $this->logoDataUri(),
+        ]);
+
+        $fileName = preg_replace('~[\\\\/:*?"<>|]+~', '-', $stockTransfer->po_no ?: $stockTransfer->transfer_no);
+
+        return $pdf->download("{$fileName}.pdf");
     }
 }

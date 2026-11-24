@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, ArrowLeftRight, Plus, ScanLine, Search, Eye, Trash2, Calendar, MapPin, Store, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, ArrowLeftRight, Plus, ScanLine, Search, Eye, Trash2, Calendar, MapPin, Store, CheckCircle2, FileDown } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -93,6 +93,21 @@ export function StockTransfersPage() {
   }
 
   // A scan adds the product as a line, or bumps the quantity if it is already listed.
+  // Printable PO for a transfer (opens the PDF in a new tab).
+  const [poLoadingId, setPoLoadingId] = useState(null)
+  async function openPo(transfer) {
+    setPoLoadingId(transfer.id)
+    try {
+      const response = await api.get(`/stock-transfers/${transfer.id}/po`, { responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+      window.open(url, '_blank')
+    } catch (error) {
+      window.alert(apiErrorMessage(error, 'Could not create the PO.'))
+    } finally {
+      setPoLoadingId(null)
+    }
+  }
+
   function handleScan(code) {
     const needle = String(codeFromQr(code)).trim().toLowerCase()
     const product =
@@ -236,7 +251,7 @@ export function StockTransfersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)]">
-                <th className="px-4 py-3">Transfer No</th>
+                <th className="px-4 py-3">PO No / Transfer</th>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">From Store (Source)</th>
                 <th className="px-4 py-3 text-center"></th>
@@ -253,7 +268,10 @@ export function StockTransfersPage() {
 
                 return (
                   <tr key={t.id} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)]/50 transition">
-                    <td className="px-4 py-3 font-mono font-bold text-[var(--ink)]">{t.transfer_no}</td>
+                    <td className="px-4 py-3 font-mono whitespace-nowrap">
+                      <div className="font-bold text-[var(--ink)]">{t.po_no || '—'}</div>
+                      <div className="text-[10px] text-[var(--muted)]">{t.transfer_no}</div>
+                    </td>
                     <td className="px-4 py-3 text-xs text-[var(--muted)] whitespace-nowrap">
                       {new Date(t.transferred_at).toLocaleDateString('en-GB')}
                     </td>
@@ -283,14 +301,26 @@ export function StockTransfersPage() {
                       {t.creator?.name ?? 'System'}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button
-                        variant="secondary"
-                        className="px-2.5 py-1 text-xs flex items-center gap-1 ml-auto"
-                        onClick={() => setDetailTransfer(t)}
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        <span>Details</span>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          variant="secondary"
+                          className="px-2.5 py-1 text-xs flex items-center gap-1"
+                          onClick={() => openPo(t)}
+                          disabled={poLoadingId === t.id}
+                          title="Download the PO (PDF)"
+                        >
+                          <FileDown className="h-3.5 w-3.5" />
+                          <span>{poLoadingId === t.id ? '…' : 'PO'}</span>
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="px-2.5 py-1 text-xs flex items-center gap-1"
+                          onClick={() => setDetailTransfer(t)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          <span>Details</span>
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 )
@@ -437,8 +467,14 @@ export function StockTransfersPage() {
 
       {/* Transfer Detail Modal */}
       {detailTransfer && (
-        <Modal title={`Transfer Details — ${detailTransfer.transfer_no}`} onClose={() => setDetailTransfer(null)} wide>
+        <Modal title={`Transfer Details — ${detailTransfer.po_no || detailTransfer.transfer_no}`} onClose={() => setDetailTransfer(null)} wide>
           <div className="space-y-5">
+            <div className="flex justify-end">
+              <Button onClick={() => openPo(detailTransfer)} disabled={poLoadingId === detailTransfer.id} className="flex items-center gap-2">
+                <FileDown className="h-4 w-4" />
+                <span>{poLoadingId === detailTransfer.id ? 'Preparing…' : 'Download PO'}</span>
+              </Button>
+            </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] p-4">
               <div>
                 <p className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">Source Store (From)</p>
@@ -476,7 +512,7 @@ export function StockTransfersPage() {
                 <table className="w-full text-xs">
                   <thead className="bg-[var(--paper)] border-b border-[var(--line)] text-left uppercase text-[var(--muted)]">
                     <tr>
-                      <th className="px-3 py-2">Item No</th>
+                      <th className="px-3 py-2">Item Code</th>
                       <th className="px-3 py-2">Product Name</th>
                       <th className="px-3 py-2 text-right">Quantity</th>
                       <th className="px-3 py-2">Line Note</th>
@@ -485,7 +521,7 @@ export function StockTransfersPage() {
                   <tbody>
                     {detailTransfer.items?.map((item, i) => (
                       <tr key={i} className="border-b border-[var(--line)] last:border-0">
-                        <td className="px-3 py-2 font-mono">{item.product?.item_no}</td>
+                        <td className="px-3 py-2 font-mono">{item.product?.item_code || item.product?.item_no}</td>
                         <td className="px-3 py-2 font-semibold text-[var(--ink)]">{item.product?.name}</td>
                         <td className="px-3 py-2 text-right font-bold tabular-nums text-[var(--accent)]">{item.quantity} {item.product?.unit}</td>
                         <td className="px-3 py-2 text-[var(--muted)]">{item.notes ?? '—'}</td>

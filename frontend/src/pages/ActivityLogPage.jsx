@@ -34,6 +34,7 @@ function browserName(ua = '') {
 }
 
 function tone(action = '') {
+  if (action.endsWith('_refused')) return 'critical'
   if (action.startsWith('auth.login_failed') || action.endsWith('.delete') || action.startsWith('inventory.flush')) return 'critical'
   if (action.startsWith('auth.')) return 'muted'
   if (action.endsWith('.create')) return 'success'
@@ -53,6 +54,7 @@ export function ActivityLogPage() {
   const [filters, setFilters] = useState(emptyFilters)
   const [page, setPage] = useState(1)
   const [open, setOpen] = useState(null)
+  const [expandAll, setExpandAll] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -146,6 +148,10 @@ export function ActivityLogPage() {
             <X className="h-3.5 w-3.5" /> Clear filters
           </button>
         )}
+        <label className="ml-auto flex cursor-pointer select-none items-center gap-2 pb-2 text-xs font-semibold text-[var(--ink)]">
+          <input type="checkbox" checked={expandAll} onChange={(e) => setExpandAll(e.target.checked)} />
+          Show full details for every entry
+        </label>
       </div>
 
       <Card className="overflow-x-auto shadow-xs">
@@ -167,7 +173,7 @@ export function ActivityLogPage() {
             </thead>
             <tbody>
               {logs.map((log) => {
-                const details = log.changes ?? null
+                const summary = changeSummary(log.changes)
                 return (
                   <Fragment key={log.id}>
                     <tr className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)]/40">
@@ -181,13 +187,14 @@ export function ActivityLogPage() {
                         <span className={clsx('mt-1 inline-block rounded px-1.5 py-0.5 font-mono text-[10px] font-bold', toneClass[tone(log.action)])}>
                           {log.action}
                         </span>
+                        {summary && <div className="mt-1 text-[11px] text-[var(--muted)]">{summary}</div>}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-[var(--ink)]">{log.ip_address || '—'}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-xs text-[var(--muted)]" title={log.user_agent || ''}>
                         {browserName(log.user_agent || '')}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {details && (
+                        {!expandAll && (
                           <button
                             type="button"
                             onClick={() => setOpen(open === log.id ? null : log.id)}
@@ -198,15 +205,10 @@ export function ActivityLogPage() {
                         )}
                       </td>
                     </tr>
-                    {open === log.id && details && (
+                    {(expandAll || open === log.id) && (
                       <tr className="border-b border-[var(--line)] bg-[var(--paper)]/60">
                         <td colSpan={6} className="px-4 py-3">
-                          <div className="mb-1 text-[11px] text-[var(--muted)]">
-                            {log.method} {log.path} · status {log.status}
-                          </div>
-                          <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-lg border border-[var(--line)] bg-[var(--surface)] p-3 font-mono text-[11px] text-[var(--ink)]">
-                            {JSON.stringify(details, null, 2)}
-                          </pre>
+                          <LogDetails log={log} />
                         </td>
                       </tr>
                     )}
@@ -248,5 +250,157 @@ export function ActivityLogPage() {
         )}
       </Card>
     </div>
+  )
+}
+
+const EVENT_STYLE = {
+  created: { label: 'Created', cls: 'bg-[var(--success-soft)] text-[var(--success)]' },
+  updated: { label: 'Changed', cls: 'bg-[var(--accent-soft)] text-[var(--accent)]' },
+  deleted: { label: 'Deleted', cls: 'bg-[var(--critical-soft)] text-[var(--critical)]' },
+}
+
+/** "Product_id" → "Product", "selling_price" → "Selling price". */
+function fieldLabel(key) {
+  const k = String(key).replace(/_id$/, '').replace(/_/g, ' ')
+  return k.charAt(0).toUpperCase() + k.slice(1)
+}
+
+function shown(value) {
+  if (value === null || value === undefined || value === '') return <span className="text-[var(--muted)]">—</span>
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
+/** One-line summary under the activity, e.g. "3 records changed: Invoice, 2 × Invoice Item". */
+function changeSummary(changes) {
+  const records = changes?.records ?? []
+  if (!records.length) return changes?.error ? `Reason: ${changes.error}` : null
+  const counts = {}
+  for (const r of records) counts[r.type] = (counts[r.type] || 0) + 1
+  const total = records.length + (changes.more || 0)
+  const parts = Object.entries(counts).map(([type, n]) => (n > 1 ? `${n} × ${type}` : type))
+  return `${total} record${total === 1 ? '' : 's'} affected: ${parts.join(', ')}${changes.more ? ', …' : ''}`
+}
+
+function LogDetails({ log }) {
+  const changes = log.changes ?? {}
+  const records = changes.records ?? []
+  const input = changes.input && Object.keys(changes.input).length ? changes.input : null
+  const extra = changes.details ?? null
+
+  return (
+    <div className="space-y-3 text-xs">
+      {changes.error && (
+        <div className="rounded-lg border border-[var(--critical)] bg-[var(--critical-soft)] px-3 py-2 font-semibold text-[var(--critical)]">
+          Refused: {changes.error}
+        </div>
+      )}
+
+      {records.length > 0 && (
+        <div className="space-y-2">
+          <p className="font-bold uppercase tracking-wide text-[var(--muted)]">What changed</p>
+          {records.map((r, i) => {
+            const style = EVENT_STYLE[r.event] ?? EVENT_STYLE.updated
+            const fields = Object.entries(r.fields ?? {})
+            return (
+              <div key={i} className="overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--surface)]">
+                <div className="flex flex-wrap items-center gap-2 border-b border-[var(--line)] px-3 py-2">
+                  <span className={clsx('rounded px-1.5 py-0.5 text-[10px] font-bold uppercase', style.cls)}>{style.label}</span>
+                  <span className="font-semibold text-[var(--ink)]">{r.type}</span>
+                  {r.label && <span className="text-[var(--ink)]">{r.label}</span>}
+                  <span className="text-[var(--muted)]">#{r.id}</span>
+                </div>
+                {fields.length > 0 && (
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left text-[10px] uppercase tracking-wide text-[var(--muted)]">
+                        <th className="w-1/4 px-3 py-1.5">Field</th>
+                        {r.event !== 'created' && <th className="px-3 py-1.5">{r.event === 'deleted' ? 'Value' : 'Before'}</th>}
+                        {r.event !== 'deleted' && <th className="px-3 py-1.5">{r.event === 'created' ? 'Value' : 'After'}</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fields.map(([key, [before, after]]) => (
+                        <tr key={key} className="border-t border-[var(--line)] align-top">
+                          <td className="px-3 py-1.5 font-semibold text-[var(--ink)]">{fieldLabel(key)}</td>
+                          {r.event !== 'created' && (
+                            <td className={clsx('break-words px-3 py-1.5', r.event === 'updated' && 'text-[var(--critical)] line-through decoration-1')}>{shown(before)}</td>
+                          )}
+                          {r.event !== 'deleted' && (
+                            <td className={clsx('break-words px-3 py-1.5', r.event === 'updated' && 'font-semibold text-[var(--success)]')}>{shown(after)}</td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )
+          })}
+          {changes.more > 0 && (
+            <p className="text-[var(--muted)]">…and {changes.more} more record{changes.more === 1 ? '' : 's'} (bulk change; only the first 300 are listed).</p>
+          )}
+        </div>
+      )}
+
+      {extra && (
+        <div>
+          <p className="mb-1 font-bold uppercase tracking-wide text-[var(--muted)]">Notes</p>
+          <KeyValues data={extra} />
+        </div>
+      )}
+
+      {input && (
+        <details className="rounded-lg border border-[var(--line)] bg-[var(--surface)]" open={records.length === 0}>
+          <summary className="cursor-pointer px-3 py-2 font-bold uppercase tracking-wide text-[var(--muted)]">Data submitted</summary>
+          <div className="border-t border-[var(--line)] p-3">
+            <KeyValues data={input} />
+          </div>
+        </details>
+      )}
+
+      <div className="grid grid-cols-1 gap-x-6 gap-y-1 text-[11px] text-[var(--muted)] sm:grid-cols-2">
+        <div><b className="text-[var(--ink)]">Request:</b> {log.method} {log.path} · status {log.status}</div>
+        <div><b className="text-[var(--ink)]">IP address:</b> {log.ip_address || '—'}</div>
+        <div className="sm:col-span-2 break-words"><b className="text-[var(--ink)]">Device / browser:</b> {log.user_agent || '—'}</div>
+      </div>
+    </div>
+  )
+}
+
+/** Submitted form data as a readable list; nested lists (invoice lines etc.) as small tables. */
+function KeyValues({ data }) {
+  if (data == null || typeof data !== 'object') return <span>{shown(data)}</span>
+  return (
+    <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2">
+      {Object.entries(data).map(([key, value]) => {
+        const rows = Array.isArray(value) && value.length && typeof value[0] === 'object' ? value : null
+        return (
+          <div key={key} className={clsx(rows && 'sm:col-span-2')}>
+            <dt className="font-semibold text-[var(--ink)]">{fieldLabel(key)}</dt>
+            <dd className="break-words text-[var(--muted)]">
+              {rows ? (
+                <div className="mt-1 overflow-x-auto rounded border border-[var(--line)]">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left text-[10px] uppercase text-[var(--muted)]">
+                        {Object.keys(rows[0]).map((k) => <th key={k} className="px-2 py-1">{fieldLabel(k)}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, i) => (
+                        <tr key={i} className="border-t border-[var(--line)]">
+                          {Object.keys(rows[0]).map((k) => <td key={k} className="px-2 py-1 text-[var(--ink)]">{shown(row[k])}</td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : Array.isArray(value) ? value.map((v) => shown(v)).join(', ') : shown(value)}
+            </dd>
+          </div>
+        )
+      })}
+    </dl>
   )
 }

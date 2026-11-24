@@ -23,6 +23,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Activity log: note every record created / updated / deleted during a request, field by field.
+        $this->app->scoped(\App\Support\ActivityRecorder::class);
+        foreach (['created', 'updated', 'deleted'] as $event) {
+            \Illuminate\Support\Facades\Event::listen("eloquent.{$event}: *", function (string $name, array $data) use ($event) {
+                if (($data[0] ?? null) instanceof \Illuminate\Database\Eloquent\Model) {
+                    app(\App\Support\ActivityRecorder::class)->{$event}($data[0]);
+                }
+            });
+        }
+
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
             return $user->hasRole('Admin') ? true : null;
         });

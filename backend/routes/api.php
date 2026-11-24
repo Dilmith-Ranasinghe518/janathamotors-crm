@@ -51,6 +51,7 @@ Route::middleware(['auth:sanctum', 'active', 'maintenance', 'throttle:api'])->gr
     Route::apiResource('products', ProductController::class)->except(['index', 'show'])->middleware('permission:manage_products');
     Route::post('/products/{product}/adjust-stock', [StockController::class, 'adjust'])->middleware('permission:manage_stock');
     Route::get('/stock-ledger', [StockController::class, 'index'])->middleware('permission:manage_stock');
+    Route::get('/stock-transfers/{stockTransfer}/po', [StockTransferController::class, 'po'])->middleware('permission:manage_stock');
     Route::apiResource('stock-transfers', StockTransferController::class)->only(['index', 'store', 'show'])->middleware('permission:manage_stock');
 
     Route::patch('/shipments/{shipment}/move', [ShipmentController::class, 'move'])->middleware('permission:manage_shipments');
