@@ -55,11 +55,12 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         $cashier = Role::firstOrCreate(['name' => 'Cashier', 'guard_name' => 'web']);
+        // Cashier: Dashboard, Invoices, WhatsApp Orders and Customers only.
         $cashier->syncPermissions([
+            'view_dashboard',
             'create_invoice',
             'manage_orders',
-            'manage_products',
-            'manage_stock',
+            'manage_customers',
         ]);
 
         $inventoryClerk = Role::firstOrCreate(['name' => 'Inventory Clerk', 'guard_name' => 'web']);

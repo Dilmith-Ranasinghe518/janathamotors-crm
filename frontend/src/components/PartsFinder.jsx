@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Car, MapPin, Package, ScanLine, Search, Tag } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
 import { codeFromQr } from '../lib/qr'
 import { QrScanBar } from './QrScanner'
 import { Button, Modal } from './ui'
@@ -120,6 +121,7 @@ function Row({ label, children }) {
 }
 
 function PartDetails({ product: p }) {
+  const { can } = useAuth()
   const stock = Number(p.stock_on_hand ?? 0)
   const low = stock <= Number(p.reorder_level ?? 0)
   const vehicle = [p.vehicle_brand?.name, p.vehicle_model?.name].filter(Boolean).join(' ')
@@ -188,9 +190,11 @@ function PartDetails({ product: p }) {
       </dl>
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link to={`/products?search=${encodeURIComponent(p.item_code || p.name)}`} className="flex items-center gap-1.5 font-semibold text-[var(--accent)] hover:underline">
-          <Tag className="h-4 w-4" /> Open in Inventory
-        </Link>
+        {can('manage_products') && (
+          <Link to={`/products?search=${encodeURIComponent(p.item_code || p.name)}`} className="flex items-center gap-1.5 font-semibold text-[var(--accent)] hover:underline">
+            <Tag className="h-4 w-4" /> Open in Inventory
+          </Link>
+        )}
         <Link to="/invoices/new" className="flex items-center gap-1.5 font-semibold text-[var(--accent)] hover:underline">
           <Search className="h-4 w-4" /> New sales invoice
         </Link>

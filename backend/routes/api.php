@@ -45,7 +45,10 @@ Route::middleware(['auth:sanctum', 'active', 'maintenance', 'throttle:api'])->gr
     Route::get('/products/template', [ProductController::class, 'template'])->middleware('permission:manage_products');
     Route::post('/products/import', [ProductController::class, 'import'])->middleware('permission:manage_products');
     Route::post('/products/flush', [ProductController::class, 'flush'])->middleware('role:Admin');
-    Route::apiResource('products', ProductController::class)->middleware('permission:manage_products');
+    // Looking products up is also needed for billing (item search) and the Parts Finder; changing them is not.
+    Route::get('/products', [ProductController::class, 'index'])->middleware('permission:manage_products|create_invoice');
+    Route::get('/products/{product}', [ProductController::class, 'show'])->middleware('permission:manage_products|create_invoice');
+    Route::apiResource('products', ProductController::class)->except(['index', 'show'])->middleware('permission:manage_products');
     Route::post('/products/{product}/adjust-stock', [StockController::class, 'adjust'])->middleware('permission:manage_stock');
     Route::get('/stock-ledger', [StockController::class, 'index'])->middleware('permission:manage_stock');
     Route::apiResource('stock-transfers', StockTransferController::class)->only(['index', 'store', 'show'])->middleware('permission:manage_stock');
