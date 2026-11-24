@@ -25,7 +25,11 @@ class ProductController extends Controller
             ->when(! $request->boolean('include_inactive'), fn ($q) => $q->where('is_active', true))
             ->when($request->filled('source'), fn ($q) => $q->where('source', $request->input('source')))
             ->when($request->filled('store_id'), fn ($q) => $q->where('store_id', $request->input('store_id')))
-            ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->input('category_id')))
+            // A parent category also matches the products in its sub-categories.
+            ->when($request->filled('category_id'), fn ($q) => $q->whereIn('category_id', \App\Models\Category::where('id', $request->input('category_id'))
+                ->orWhere('parent_id', $request->input('category_id'))->pluck('id')))
+            ->when($request->filled('vehicle_brand_id'), fn ($q) => $this->filterByVehicle($q, VehicleModel::where('vehicle_brand_id', $request->input('vehicle_brand_id'))->get(), (int) $request->input('vehicle_brand_id')))
+            ->when($request->filled('vehicle_model_id'), fn ($q) => $this->filterByVehicle($q, VehicleModel::whereKey($request->input('vehicle_model_id'))->get()))
             ->when($request->string('search')->isNotEmpty(), function ($q) use ($request) {
                 $term = '%'.$request->string('search').'%';
                 $q->where(fn ($q) => $q->where('name', 'like', $term)
@@ -55,6 +59,32 @@ class ProductController extends Controller
     /**
      * Attach a per-store stock breakdown (stores holding non-zero stock) to each product.
      */
+    /**
+     * Products for these vehicle models: those set to the model (or, for a whole make, to the make),
+     * plus those whose name, part no or compatible-models note names the model as a whole word
+     * (the catalogue mostly marks vehicles that way, e.g. "BOOT STEERING RACK ELITE", "48531-BEZZA").
+     */
+    private function filterByVehicle($query, $models, ?int $makeId = null)
+    {
+        $words = $models->flatMap(fn ($m) => preg_split('/[^A-Za-z0-9]+/', strtoupper($m->name)))
+            ->filter(fn ($w) => strlen($w) >= 3 && ! ctype_digit($w))
+            ->unique()
+            ->values();
+
+        return $query->where(function ($q) use ($models, $makeId, $words) {
+            $q->whereIn('products.vehicle_model_id', $models->pluck('id')->all() ?: [0]);
+            if ($makeId) {
+                $q->orWhere('products.vehicle_brand_id', $makeId);
+            }
+            if ($words->isNotEmpty()) {
+                $pattern = '(^|[^A-Za-z0-9])('.$words->map(fn ($w) => preg_quote($w))->join('|').')([^A-Za-z0-9]|$)';
+                $q->orWhereRaw('UPPER(products.name) REGEXP ?', [$pattern])
+                    ->orWhereRaw('UPPER(COALESCE(products.part_no, \'\')) REGEXP ?', [$pattern])
+                    ->orWhereRaw('UPPER(COALESCE(products.compatible_models, \'\')) REGEXP ?', [$pattern]);
+            }
+        });
+    }
+
     private function attachStoreStock($products): void
     {
         $rows = StockLedger::query()

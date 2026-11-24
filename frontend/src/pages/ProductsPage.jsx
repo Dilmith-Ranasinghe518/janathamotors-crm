@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { SearchSelect } from '../components/SearchSelect'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   MapPin,
@@ -55,6 +56,8 @@ export function ProductsPage() {
   const [search, setSearch] = useState('')
   const [selectedStoreId, setSelectedStoreId] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  // '' | 'b:<vehicle brand id>' (all its models) | 'm:<vehicle model id>'
+  const [vehicleFilter, setVehicleFilter] = useState('')
   const [lowStockOnly, setLowStockOnly] = useState(false)
   // '' = all products, 'invoice' = items first typed onto an invoice (to be completed)
   const [source, setSource] = useState('')
@@ -100,10 +103,16 @@ export function ProductsPage() {
   // Any change to the search or filters starts again from the first page.
   useEffect(() => {
     setPage(1)
-  }, [search, selectedStoreId, selectedCategoryId, lowStockOnly, source, perPage, sort])
+  }, [search, selectedStoreId, selectedCategoryId, vehicleFilter, lowStockOnly, source, perPage, sort])
+
+  const vehicleParams = vehicleFilter.startsWith('b:')
+    ? { vehicle_brand_id: vehicleFilter.slice(2) }
+    : vehicleFilter.startsWith('m:')
+      ? { vehicle_model_id: vehicleFilter.slice(2) }
+      : {}
 
   const productsQuery = useQuery({
-    queryKey: ['products', search, selectedStoreId, selectedCategoryId, lowStockOnly, source, sort, page, perPage],
+    queryKey: ['products', search, selectedStoreId, selectedCategoryId, vehicleFilter, lowStockOnly, source, sort, page, perPage],
     placeholderData: (prev) => prev,
     queryFn: () =>
       api
@@ -116,6 +125,7 @@ export function ProductsPage() {
             search: search || undefined,
             store_id: selectedStoreId || undefined,
             category_id: selectedCategoryId || undefined,
+            ...vehicleParams,
             low_stock: lowStockOnly || undefined,
             source: source || undefined,
           },
@@ -127,6 +137,36 @@ export function ProductsPage() {
   const brandsQuery = useQuery({ queryKey: ['brands'], queryFn: () => api.get('/brands').then((r) => r.data) })
   const vehicleBrandsQuery = useQuery({ queryKey: ['vehicle-brands'], queryFn: () => api.get('/vehicle-brands').then((r) => r.data) })
   const vehicleModelsQuery = useQuery({ queryKey: ['vehicle-models'], queryFn: () => api.get('/vehicle-models').then((r) => r.data) })
+
+  // Filter lists: sub-categories under their parent; vehicle models under their make.
+  const categoryOptions = useMemo(() => {
+    const all = categoriesQuery.data ?? []
+    const count = (c) => (c.products_count != null ? String(c.products_count) : undefined)
+    const out = []
+    for (const parent of all.filter((c) => !c.parent_id)) {
+      out.push({ value: parent.id, label: parent.name, hint: count(parent) })
+      for (const child of all.filter((c) => c.parent_id === parent.id)) {
+        out.push({ value: child.id, label: child.name, hint: count(child), indent: true })
+      }
+    }
+    // sub-categories whose parent is missing
+    for (const c of all.filter((c) => c.parent_id && !all.some((p) => p.id === c.parent_id))) {
+      out.push({ value: c.id, label: c.name, hint: count(c) })
+    }
+    return out
+  }, [categoriesQuery.data])
+
+  const vehicleOptions = useMemo(() => {
+    const models = vehicleModelsQuery.data ?? []
+    const out = []
+    for (const make of [...(vehicleBrandsQuery.data ?? [])].sort((a, b) => a.name.localeCompare(b.name))) {
+      out.push({ value: `b:${make.id}`, label: `All ${make.name} models`, group: make.name, isGroupItem: true })
+      for (const m of models.filter((m) => m.vehicle_brand_id === make.id)) {
+        out.push({ value: `m:${m.id}`, label: m.name, group: make.name, indent: true })
+      }
+    }
+    return out
+  }, [vehicleBrandsQuery.data, vehicleModelsQuery.data])
 
   const stores = storesQuery.data?.data ?? []
 
@@ -231,6 +271,7 @@ export function ProductsPage() {
             search: search || undefined,
             store_id: selectedStoreId || undefined,
             category_id: selectedCategoryId || undefined,
+            ...vehicleParams,
             low_stock: lowStockOnly || undefined,
             source: source || undefined,
             sort: sort.column,
@@ -466,17 +507,23 @@ export function ProductsPage() {
         </div>
 
         <div className="min-w-[9rem] flex-1 sm:w-60 sm:flex-none">
-          <Select
+          <SearchSelect
             value={selectedCategoryId}
-            onChange={(e) => setSelectedCategoryId(e.target.value)}
-          >
-            <option value="">All Categories</option>
-            {categoriesQuery.data?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </Select>
+            onChange={setSelectedCategoryId}
+            options={categoryOptions}
+            placeholder="All Categories"
+            searchPlaceholder="Search categories…"
+          />
+        </div>
+
+        <div className="min-w-[9rem] flex-1 sm:w-60 sm:flex-none">
+          <SearchSelect
+            value={vehicleFilter}
+            onChange={setVehicleFilter}
+            options={vehicleOptions}
+            placeholder="All Vehicle Models"
+            searchPlaceholder="Search make or model…"
+          />
         </div>
 
         <label className="flex items-center gap-2 text-sm text-[var(--muted)] cursor-pointer select-none">
