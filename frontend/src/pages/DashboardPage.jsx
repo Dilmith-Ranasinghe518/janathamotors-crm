@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { api } from '../lib/api'
 import { Card, PageHeader, EmptyState } from '../components/ui'
+import { PartsFinderButton } from '../components/PartsFinder'
 
 function currency(value) {
   return `Rs. ${Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
@@ -26,7 +27,7 @@ export function DashboardPage() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" description="Today's snapshot across sales, stock, and dues." />
+      <PageHeader title="Dashboard" description="Today's snapshot across sales, stock, and dues." actions={<PartsFinderButton />} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Sales today" value={currency(data.sales_today)} />

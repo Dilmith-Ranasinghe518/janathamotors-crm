@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { SearchSelect } from '../components/SearchSelect'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -21,6 +21,7 @@ import {
   ChevronsUpDown,
 } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
+import { PartsFinderButton } from '../components/PartsFinder'
 import { Button, Card, EmptyState, Input, Modal, PageHeader, Select } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { ProductQrModal, ProductQrThumb, printQrSheet } from '../components/ProductQr'
@@ -53,7 +54,9 @@ export function ProductsPage() {
   const isAdmin = Boolean(user?.roles?.includes('Admin'))
   const [flushOpen, setFlushOpen] = useState(false)
   const queryClient = useQueryClient()
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  // ?search=… (e.g. from the Parts Finder) pre-fills the search box.
+  const [search, setSearch] = useState(() => searchParams.get('search') || '')
   const [selectedStoreId, setSelectedStoreId] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
   // '' | 'b:<vehicle brand id>' (all its models) | 'm:<vehicle model id>'
@@ -397,6 +400,7 @@ export function ProductsPage() {
         actions={
           can('manage_products') && (
             <div className="flex flex-wrap items-center gap-2">
+              <PartsFinderButton />
               {isAdmin && (
                 <Button
                   variant="secondary"

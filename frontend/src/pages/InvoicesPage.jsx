@@ -5,6 +5,7 @@ import { Ban, Eye, FileDown, Pencil, Trash2, Truck, Plus, CreditCard, Search, X,
 import { api, apiErrorMessage } from '../lib/api'
 import { Card, EmptyState, Input, PageHeader, Select, StatusBadge } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
+import { PartsFinderButton } from '../components/PartsFinder'
 import { useNetwork } from '../context/NetworkContext'
 
 /** A delivery note needs the customer's name plus an address or phone number. */
@@ -125,6 +126,7 @@ export function InvoicesPage() {
         actions={
           can('create_invoice') && (
             <div className="flex flex-wrap items-center gap-2">
+              <PartsFinderButton />
               <Link
                 to="/invoices/new?type=credit"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--accent)] px-4 py-2.5 text-sm font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] transition"
