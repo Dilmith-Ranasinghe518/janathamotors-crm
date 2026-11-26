@@ -61,8 +61,13 @@ export function AuthProvider({ children }) {
     return Boolean(user?.permissions?.includes(permission))
   }
 
+  function hasRole(roleName) {
+    if (!user?.roles) return false
+    return user.roles.some((r) => (typeof r === 'string' ? r === roleName : r?.name === roleName))
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, can }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, can, hasRole }}>
       {children}
     </AuthContext.Provider>
   )

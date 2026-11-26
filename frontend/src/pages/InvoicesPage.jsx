@@ -17,10 +17,10 @@ function hasDeliveryDetails(inv) {
 const emptyFilters = { status: '', type: '', store_id: '', from: '', to: '' }
 
 export function InvoicesPage() {
-  const { can, user } = useAuth()
+  const { can, user, hasRole } = useAuth()
   const { queue } = useNetwork()
   const location = useLocation()
-  const isAdmin = Boolean(user?.roles?.includes('Admin'))
+  const isAdmin = hasRole ? hasRole('Admin') : Boolean(user?.roles?.includes('Admin'))
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')

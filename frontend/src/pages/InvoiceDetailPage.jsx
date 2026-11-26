@@ -8,8 +8,8 @@ import { useAuth } from '../context/AuthContext'
 
 export function InvoiceDetailPage() {
   const { id } = useParams()
-  const { can, user } = useAuth()
-  const isAdmin = Boolean(user?.roles?.includes('Admin'))
+  const { can, user, hasRole } = useAuth()
+  const isAdmin = hasRole ? hasRole('Admin') : Boolean(user?.roles?.includes('Admin'))
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [payOpen, setPayOpen] = useState(false)

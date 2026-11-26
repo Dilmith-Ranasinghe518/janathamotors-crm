@@ -15,6 +15,7 @@ import { SuppliersPage } from './pages/SuppliersPage'
 import { InvoicesPage } from './pages/InvoicesPage'
 import { InvoiceCreatePage } from './pages/InvoiceCreatePage'
 import { InvoiceDetailPage } from './pages/InvoiceDetailPage'
+import { PettyCashPage } from './pages/PettyCashPage'
 import { UsersPage } from './pages/UsersPage'
 import { RolesPage } from './pages/RolesPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -40,6 +41,7 @@ const HOME_PAGES = [
   ['manage_suppliers', '/suppliers'],
   ['manage_shipments', '/shipments'],
   ['view_reports', '/reports'],
+  ['view_petty_cash', '/petty-cash'],
 ]
 
 function HomeRedirect() {
@@ -79,6 +81,10 @@ export default function App() {
                     <Route path="/invoices/new" element={<InvoiceCreatePage />} />
                     <Route path="/invoices/:id/edit" element={<InvoiceCreatePage />} />
                     <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
+                  </Route>
+
+                  <Route element={<ProtectedRoute permission="view_petty_cash" />}>
+                    <Route path="/petty-cash" element={<PettyCashPage />} />
                   </Route>
 
                   <Route element={<ProtectedRoute permission="manage_products" />}>

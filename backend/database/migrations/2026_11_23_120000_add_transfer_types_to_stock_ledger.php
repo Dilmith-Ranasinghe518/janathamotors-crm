@@ -11,11 +11,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE stock_ledger MODIFY type ENUM('purchase','sale','adjustment','return','transfer_in','transfer_out') NOT NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE stock_ledger MODIFY type ENUM('purchase','sale','adjustment','return','transfer_in','transfer_out') NOT NULL");
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE stock_ledger MODIFY type ENUM('purchase','sale','adjustment','return') NOT NULL");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE stock_ledger MODIFY type ENUM('purchase','sale','adjustment','return') NOT NULL");
+        }
     }
 };

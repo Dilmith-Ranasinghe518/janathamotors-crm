@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PettyCashController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\PurchaseController;
@@ -80,6 +81,19 @@ Route::middleware(['auth:sanctum', 'active', 'maintenance', 'throttle:api'])->gr
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->middleware('permission:create_invoice');
     Route::get('/invoices/{invoice}/delivery-note', [InvoiceController::class, 'deliveryNote'])->middleware('permission:create_invoice');
     Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])->middleware('permission:create_invoice');
+
+    // Petty Cash System
+    Route::get('/petty-cash/summary', [PettyCashController::class, 'summary'])->middleware('permission:view_petty_cash');
+    Route::get('/petty-cash/top-ups', [PettyCashController::class, 'topUps'])->middleware('permission:view_petty_cash');
+    Route::post('/petty-cash/top-up', [PettyCashController::class, 'topUp'])->middleware('permission:manage_petty_cash');
+    Route::get('/petty-cash', [PettyCashController::class, 'index'])->middleware('permission:view_petty_cash');
+    Route::post('/petty-cash', [PettyCashController::class, 'store'])->middleware('permission:request_petty_cash');
+    Route::get('/petty-cash/{pettyCashRequest}', [PettyCashController::class, 'show'])->middleware('permission:view_petty_cash');
+    Route::post('/petty-cash/{pettyCashRequest}/approve', [PettyCashController::class, 'approve'])->middleware('permission:approve_petty_cash');
+    Route::post('/petty-cash/{pettyCashRequest}/reject', [PettyCashController::class, 'reject'])->middleware('permission:approve_petty_cash');
+    Route::post('/petty-cash/{pettyCashRequest}/disburse', [PettyCashController::class, 'disburse'])->middleware('permission:disburse_petty_cash');
+    Route::get('/petty-cash/{pettyCashRequest}/pdf', [PettyCashController::class, 'voucherPdf'])->middleware('permission:view_petty_cash');
+    Route::delete('/petty-cash/{pettyCashRequest}', [PettyCashController::class, 'destroy'])->middleware('permission:request_petty_cash|manage_petty_cash');
 
     Route::apiResource('users', UserController::class)->middleware('permission:manage_users');
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])->middleware('role:Admin');

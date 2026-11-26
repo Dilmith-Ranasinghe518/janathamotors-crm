@@ -29,6 +29,11 @@ class RolePermissionSeeder extends Seeder
             'manage_stores',
             'manage_shipments',
             'manage_orders',
+            'view_petty_cash',
+            'request_petty_cash',
+            'approve_petty_cash',
+            'disburse_petty_cash',
+            'manage_petty_cash',
         ];
 
         foreach ($permissions as $permission) {
@@ -37,6 +42,20 @@ class RolePermissionSeeder extends Seeder
 
         $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
         $admin->syncPermissions(Permission::all());
+
+        $financeAdmin = Role::firstOrCreate(['name' => 'Finance Admin', 'guard_name' => 'web']);
+        $financeAdmin->syncPermissions([
+            'view_dashboard',
+            'view_reports',
+            'view_petty_cash',
+            'request_petty_cash',
+            'approve_petty_cash',
+            'disburse_petty_cash',
+            'manage_petty_cash',
+            'create_invoice',
+            'manage_customers',
+            'manage_suppliers',
+        ]);
 
         $manager = Role::firstOrCreate(['name' => 'Manager', 'guard_name' => 'web']);
         $manager->syncPermissions([
@@ -52,15 +71,19 @@ class RolePermissionSeeder extends Seeder
             'manage_stores',
             'manage_shipments',
             'manage_orders',
+            'view_petty_cash',
+            'request_petty_cash',
         ]);
 
         $cashier = Role::firstOrCreate(['name' => 'Cashier', 'guard_name' => 'web']);
-        // Cashier: Dashboard, Invoices, WhatsApp Orders and Customers only.
+        // Cashier: Invoices, WhatsApp Orders, Inventory, Brands & Vehicles, Stock Transfers, Petty Cash.
         $cashier->syncPermissions([
-            'view_dashboard',
             'create_invoice',
             'manage_orders',
-            'manage_customers',
+            'manage_products',
+            'manage_stock',
+            'view_petty_cash',
+            'request_petty_cash',
         ]);
 
         $inventoryClerk = Role::firstOrCreate(['name' => 'Inventory Clerk', 'guard_name' => 'web']);
@@ -72,6 +95,14 @@ class RolePermissionSeeder extends Seeder
             'manage_suppliers',
             'manage_stores',
             'manage_shipments',
+            'view_petty_cash',
+            'request_petty_cash',
+        ]);
+
+        $staff = Role::firstOrCreate(['name' => 'Staff', 'guard_name' => 'web']);
+        $staff->syncPermissions([
+            'view_petty_cash',
+            'request_petty_cash',
         ]);
     }
 }

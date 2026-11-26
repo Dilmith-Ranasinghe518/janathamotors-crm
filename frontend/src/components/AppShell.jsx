@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import clsx from 'clsx'
 import {
   LayoutDashboard,
+  Wallet,
   Receipt,
   Package,
   Car,
@@ -38,6 +39,7 @@ import { NetworkBanners, NetworkStatusPill } from './NetworkStatus'
 
 const NAV = [
   { to: '/', label: 'Dashboard', permission: 'view_dashboard', icon: LayoutDashboard, end: true },
+  { to: '/petty-cash', label: 'Petty Cash', permission: 'view_petty_cash', icon: Wallet },
   { to: '/invoices', label: 'Invoices', permission: 'create_invoice', icon: Receipt },
   { to: '/whatsapp-orders', label: 'WhatsApp Orders', permission: 'manage_orders', icon: MessageCircle },
   { to: '/products', label: 'Inventory', permission: 'manage_products', icon: Package },
@@ -69,7 +71,7 @@ function ThemeToggle() {
 }
 
 export function AppShell() {
-  const { user, can, logout } = useAuth()
+  const { user, can, logout, hasRole } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -116,7 +118,9 @@ export function AppShell() {
   }, [location.pathname])
 
   const visibleNavItems = NAV.filter(
-    (item) => (!item.permission || can(item.permission)) && (!item.role || user?.roles?.includes(item.role))
+    (item) =>
+      (!item.permission || can(item.permission)) &&
+      (!item.role || (hasRole ? hasRole(item.role) : user?.roles?.includes(item.role)))
   )
 
   return (
