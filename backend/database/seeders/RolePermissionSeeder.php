@@ -34,6 +34,8 @@ class RolePermissionSeeder extends Seeder
             'approve_petty_cash',
             'disburse_petty_cash',
             'manage_petty_cash',
+            'find_parts',
+            'create_stock_transfer',
         ];
 
         foreach ($permissions as $permission) {
@@ -99,10 +101,13 @@ class RolePermissionSeeder extends Seeder
             'request_petty_cash',
         ]);
 
+        // Staff: own dashboard with the Parts Finder and stock transfers, plus petty cash requests.
         $staff = Role::firstOrCreate(['name' => 'Staff', 'guard_name' => 'web']);
         $staff->syncPermissions([
             'view_petty_cash',
             'request_petty_cash',
+            'find_parts',
+            'create_stock_transfer',
         ]);
     }
 }

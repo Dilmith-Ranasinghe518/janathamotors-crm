@@ -35,7 +35,7 @@ export function PartsFinderButton() {
   )
 }
 
-function PartsFinder({ onClose }) {
+export function PartsFinder({ onClose }) {
   const [product, setProduct] = useState(null)
   const [matches, setMatches] = useState([])
   const [message, setMessage] = useState(null)

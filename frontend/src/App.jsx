@@ -16,6 +16,7 @@ import { InvoicesPage } from './pages/InvoicesPage'
 import { InvoiceCreatePage } from './pages/InvoiceCreatePage'
 import { InvoiceDetailPage } from './pages/InvoiceDetailPage'
 import { PettyCashPage } from './pages/PettyCashPage'
+import { StaffDashboardPage } from './pages/StaffDashboardPage'
 import { UsersPage } from './pages/UsersPage'
 import { RolesPage } from './pages/RolesPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -41,6 +42,7 @@ const HOME_PAGES = [
   ['manage_suppliers', '/suppliers'],
   ['manage_shipments', '/shipments'],
   ['view_reports', '/reports'],
+  ['find_parts|create_stock_transfer', '/staff-dashboard'],
   ['view_petty_cash', '/petty-cash'],
 ]
 
@@ -76,6 +78,10 @@ export default function App() {
                     <Route path="/dashboard" element={<DashboardPage />} />
                   </Route>
 
+                  <Route element={<ProtectedRoute permission="find_parts|create_stock_transfer" />}>
+                    <Route path="/staff-dashboard" element={<StaffDashboardPage />} />
+                  </Route>
+
                   <Route element={<ProtectedRoute permission="create_invoice" />}>
                     <Route path="/invoices" element={<InvoicesPage />} />
                     <Route path="/invoices/new" element={<InvoiceCreatePage />} />
@@ -105,7 +111,7 @@ export default function App() {
                     <Route path="/stores" element={<StoresPage />} />
                   </Route>
 
-                  <Route element={<ProtectedRoute permission="manage_stock" />}>
+                  <Route element={<ProtectedRoute permission="manage_stock|create_stock_transfer" />}>
                     <Route path="/stock-transfers" element={<StockTransfersPage />} />
                   </Route>
 

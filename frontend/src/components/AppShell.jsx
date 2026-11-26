@@ -39,6 +39,8 @@ import { NetworkBanners, NetworkStatusPill } from './NetworkStatus'
 
 const NAV = [
   { to: '/', label: 'Dashboard', permission: 'view_dashboard', icon: LayoutDashboard, end: true },
+  // Staff home; hidden for users who have the main Dashboard.
+  { to: '/staff-dashboard', label: 'Staff Dashboard', permission: 'find_parts|create_stock_transfer', hideIf: 'view_dashboard', icon: LayoutDashboard },
   { to: '/petty-cash', label: 'Petty Cash', permission: 'view_petty_cash', icon: Wallet },
   { to: '/invoices', label: 'Invoices', permission: 'create_invoice', icon: Receipt },
   { to: '/whatsapp-orders', label: 'WhatsApp Orders', permission: 'manage_orders', icon: MessageCircle },
@@ -47,7 +49,7 @@ const NAV = [
   { to: '/customers', label: 'Customers', permission: 'manage_customers', icon: Users },
   { to: '/suppliers', label: 'Suppliers & Purchases', permission: 'manage_suppliers', icon: Truck },
   { to: '/stores', label: 'Stores & Outlets', permission: 'manage_stores', icon: Store },
-  { to: '/stock-transfers', label: 'Stock Transfers', permission: 'manage_stock', icon: ArrowLeftRight },
+  { to: '/stock-transfers', label: 'Stock Transfers', permission: 'manage_stock|create_stock_transfer', icon: ArrowLeftRight },
   { to: '/shipments', label: 'Shipments', permission: 'manage_shipments', icon: Ship },
   { to: '/reports', label: 'Reports', permission: 'view_reports', icon: BarChart3 },
   { to: '/users', label: 'Users', permission: 'manage_users', icon: UserCheck },
@@ -120,6 +122,7 @@ export function AppShell() {
   const visibleNavItems = NAV.filter(
     (item) =>
       (!item.permission || can(item.permission)) &&
+      (!item.hideIf || !can(item.hideIf)) &&
       (!item.role || (hasRole ? hasRole(item.role) : user?.roles?.includes(item.role)))
   )
 

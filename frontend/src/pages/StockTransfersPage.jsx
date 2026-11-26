@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowRight, ArrowLeftRight, Plus, ScanLine, Search, Eye, Trash2, Calendar, MapPin, Store, CheckCircle2, FileDown } from 'lucide-react'
 import { api, apiErrorMessage } from '../lib/api'
@@ -28,6 +29,17 @@ export function StockTransfersPage() {
   const [error, setError] = useState('')
   const [scanMessage, setScanMessage] = useState(null)
   const [startWithCamera, setStartWithCamera] = useState(false)
+
+  // ?new=1 (or ?new=scan) opens the New Stock Transfer form, e.g. from the Staff Dashboard.
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    const wanted = searchParams.get('new')
+    if (wanted) {
+      openCreateModal(wanted === 'scan')
+      setSearchParams({}, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const storesQuery = useQuery({
     queryKey: ['stores', 'all'],
@@ -184,7 +196,7 @@ export function StockTransfersPage() {
         title="Stock Transfers"
         description="Transfer inventory items between store locations and view transfer audit history."
         actions={
-          can('manage_stock') && (
+          can('manage_stock|create_stock_transfer') && (
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="secondary" onClick={() => openCreateModal(true)} className="flex items-center gap-1.5">
                 <ScanLine className="h-4 w-4" />

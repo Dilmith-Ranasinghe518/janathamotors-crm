@@ -57,8 +57,11 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  // 'a|b' means any of these permissions.
   function can(permission) {
-    return Boolean(user?.permissions?.includes(permission))
+    return String(permission)
+      .split('|')
+      .some((p) => Boolean(user?.permissions?.includes(p)))
   }
 
   function hasRole(roleName) {

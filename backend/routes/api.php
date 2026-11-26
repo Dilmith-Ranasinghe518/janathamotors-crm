@@ -47,13 +47,14 @@ Route::middleware(['auth:sanctum', 'active', 'maintenance', 'throttle:api'])->gr
     Route::post('/products/import', [ProductController::class, 'import'])->middleware('permission:manage_products');
     Route::post('/products/flush', [ProductController::class, 'flush'])->middleware('role:Admin');
     // Looking products up is also needed for billing (item search) and the Parts Finder; changing them is not.
-    Route::get('/products', [ProductController::class, 'index'])->middleware('permission:manage_products|create_invoice');
-    Route::get('/products/{product}', [ProductController::class, 'show'])->middleware('permission:manage_products|create_invoice');
+    Route::get('/products', [ProductController::class, 'index'])->middleware('permission:manage_products|create_invoice|find_parts|create_stock_transfer');
+    Route::get('/products/{product}', [ProductController::class, 'show'])->middleware('permission:manage_products|create_invoice|find_parts|create_stock_transfer');
     Route::apiResource('products', ProductController::class)->except(['index', 'show'])->middleware('permission:manage_products');
     Route::post('/products/{product}/adjust-stock', [StockController::class, 'adjust'])->middleware('permission:manage_stock');
     Route::get('/stock-ledger', [StockController::class, 'index'])->middleware('permission:manage_stock');
-    Route::get('/stock-transfers/{stockTransfer}/po', [StockTransferController::class, 'po'])->middleware('permission:manage_stock');
-    Route::apiResource('stock-transfers', StockTransferController::class)->only(['index', 'store', 'show'])->middleware('permission:manage_stock');
+    // Staff with create_stock_transfer can make and view transfers, but not adjust stock or read the ledger.
+    Route::get('/stock-transfers/{stockTransfer}/po', [StockTransferController::class, 'po'])->middleware('permission:manage_stock|create_stock_transfer');
+    Route::apiResource('stock-transfers', StockTransferController::class)->only(['index', 'store', 'show'])->middleware('permission:manage_stock|create_stock_transfer');
 
     Route::patch('/shipments/{shipment}/move', [ShipmentController::class, 'move'])->middleware('permission:manage_shipments');
     Route::apiResource('shipments', ShipmentController::class)->middleware('permission:manage_shipments');
@@ -72,7 +73,7 @@ Route::middleware(['auth:sanctum', 'active', 'maintenance', 'throttle:api'])->gr
     Route::get('/customers', [CustomerController::class, 'index'])->middleware('permission:manage_customers|create_invoice');
     Route::apiResource('customers', CustomerController::class)->except(['index'])->middleware('permission:manage_customers');
     Route::get('/stores', [StoreController::class, 'index'])
-        ->middleware('permission:manage_stores|manage_products|manage_stock|create_invoice|manage_shipments|view_reports');
+        ->middleware('permission:manage_stores|manage_products|manage_stock|create_invoice|manage_shipments|view_reports|create_stock_transfer');
     Route::apiResource('stores', StoreController::class)->except(['index'])->middleware('permission:manage_stores');
 
     Route::apiResource('invoices', InvoiceController::class)->only(['index', 'store', 'show', 'update'])->middleware('permission:create_invoice');
