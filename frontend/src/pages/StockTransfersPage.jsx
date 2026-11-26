@@ -260,17 +260,59 @@ export function StockTransfersPage() {
         ) : transfers.length === 0 ? (
           <EmptyState message="No stock transfer records found." />
         ) : (
-          <table className="w-full text-sm">
+          <>
+          {/* Phones / tablets / small laptops: one card per transfer */}
+          <ul className="divide-y divide-[var(--line)] xl:hidden">
+            {transfers.map((t) => {
+              const count = t.items?.length ?? 0
+              const qty = t.items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) ?? 0
+              return (
+                <li key={t.id} className="space-y-2.5 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-mono text-sm font-bold text-[var(--ink)]">{t.po_no || '—'}</p>
+                      <p className="truncate font-mono text-[10px] text-[var(--muted)]">{t.transfer_no}</p>
+                    </div>
+                    <span className="shrink-0 text-xs text-[var(--muted)]">{new Date(t.transferred_at).toLocaleDateString('en-GB')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StoreChip store={t.from_store} tone="text-amber-500" fluid />
+                    <ArrowRight className="h-4 w-4 shrink-0 text-[var(--accent)]" />
+                    <StoreChip store={t.to_store} tone="text-emerald-500" fluid />
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]">
+                      <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 font-bold text-[var(--accent)]">
+                        {count} {count === 1 ? 'item' : 'items'} · qty {qty}
+                      </span>
+                      <span>by {t.creator?.name ?? 'System'}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => openPo(t)} disabled={poLoadingId === t.id}>
+                        <FileDown className="h-3.5 w-3.5" />
+                        <span>{poLoadingId === t.id ? '…' : 'PO'}</span>
+                      </Button>
+                      <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => setDetailTransfer(t)}>
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>Details</span>
+                      </Button>
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+
+          {/* Wide screens: table */}
+          <table className="hidden w-full text-sm xl:table">
             <thead>
               <tr className="border-b border-[var(--line)] text-left text-xs uppercase tracking-wide text-[var(--muted)]">
-                <th className="px-4 py-3">PO No / Transfer</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">From Store (Source)</th>
-                <th className="px-4 py-3 text-center"></th>
-                <th className="px-4 py-3">To Store (Destination)</th>
-                <th className="px-4 py-3 text-center">Items</th>
-                <th className="px-4 py-3">Transferred By</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="whitespace-nowrap px-4 py-3">PO No / Transfer</th>
+                <th className="whitespace-nowrap px-4 py-3">Date</th>
+                <th className="whitespace-nowrap px-4 py-3">From → To</th>
+                <th className="whitespace-nowrap px-4 py-3 text-center">Items</th>
+                <th className="whitespace-nowrap px-4 py-3">By</th>
+                <th className="whitespace-nowrap px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -288,31 +330,21 @@ export function StockTransfersPage() {
                       {new Date(t.transferred_at).toLocaleDateString('en-GB')}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-semibold text-[var(--ink)]">
-                        <Store className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                        <span>{t.from_store?.name}</span>
-                        <span className="font-mono text-[10px] text-[var(--muted)]">({t.from_store?.code})</span>
-                      </span>
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <StoreChip store={t.from_store} tone="text-amber-500" />
+                        <ArrowRight className="h-4 w-4 shrink-0 text-[var(--accent)]" />
+                        <StoreChip store={t.to_store} tone="text-emerald-500" />
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <ArrowRight className="h-4 w-4 text-[var(--accent)] mx-auto" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-xs font-semibold text-[var(--ink)]">
-                        <Store className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                        <span>{t.to_store?.name}</span>
-                        <span className="font-mono text-[10px] text-[var(--muted)]">({t.to_store?.code})</span>
+                      <span className="inline-flex items-center whitespace-nowrap rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-bold text-[var(--accent)]">
+                        {totalItemsCount} {totalItemsCount === 1 ? 'item' : 'items'} · qty {totalQtySum}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-xs font-bold text-[var(--accent)]">
-                        {totalItemsCount} {totalItemsCount === 1 ? 'item' : 'items'} ({totalQtySum} qty)
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-[var(--muted)]">
+                    <td className="max-w-[8rem] px-4 py-3 text-xs leading-snug text-[var(--muted)]">
                       {t.creator?.name ?? 'System'}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="whitespace-nowrap px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <Button
                           variant="secondary"
@@ -326,11 +358,12 @@ export function StockTransfersPage() {
                         </Button>
                         <Button
                           variant="secondary"
-                          className="px-2.5 py-1 text-xs flex items-center gap-1"
+                          className="px-2 py-1 text-xs"
                           onClick={() => setDetailTransfer(t)}
+                          title="View details"
+                          aria-label="View details"
                         >
                           <Eye className="h-3.5 w-3.5" />
-                          <span>Details</span>
                         </Button>
                       </div>
                     </td>
@@ -339,6 +372,7 @@ export function StockTransfersPage() {
               })}
             </tbody>
           </table>
+          </>
         )}
       </Card>
 
@@ -553,5 +587,21 @@ export function StockTransfersPage() {
         </Modal>
       )}
     </div>
+  )
+}
+
+/** Store code in bold with the store name underneath, kept on as little width as possible. */
+function StoreChip({ store, tone, fluid = false }) {
+  return (
+    <span
+      title={store?.name}
+      className={`inline-flex items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 ${fluid ? 'min-w-0 flex-1' : ''}`}
+    >
+      <Store className={`h-3.5 w-3.5 shrink-0 ${tone}`} />
+      <span className="min-w-0 leading-tight">
+        <span className="block font-mono text-xs font-bold text-[var(--ink)]">{store?.code ?? '—'}</span>
+        <span className={`block truncate text-[10px] text-[var(--muted)] ${fluid ? '' : 'max-w-[9rem]'}`}>{store?.name}</span>
+      </span>
+    </span>
   )
 }
